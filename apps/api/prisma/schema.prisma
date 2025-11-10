@@ -1,0 +1,190 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+//
+// ===== Enums =====
+//
+enum Role {
+  user
+  supporter
+}
+
+enum RequestStatus {
+  open        // 引き受け待ち
+  matched     // 引受済み
+  confirmed   // 電話済み
+  completed   // 完了
+  canceled    // 依頼取消
+  expired     // 期限切れ
+}
+
+enum OrderStatus {
+  matched     // 引受済み
+  confirmed   // 電話済み
+  decline     // サポーターからの辞退
+  refusal     // 利用者からのサポーター交代要請
+  completed   // 完了
+  canceled    // 依頼取消
+}
+
+//
+// ===== Models =====
+//
+
+// ----------------------------------------
+// usersテーブル
+// ----------------------------------------
+model User {
+  id                                String    @id                                      // Firebase UIDが入る
+  identityVerified                  Boolean   @default(false) @map("identity_verified")
+  role                              Role      @default(user)
+  familyName                        String    @map("family_name")
+  firstName                         String    @map("first_name")
+  familyNameKana                    String    @map("family_name_kana")
+  firstNameKana                     String    @map("first_name_kana")
+  birthday                          DateTime
+  gender                            String
+  email                             String    @unique
+  phoneNumber                       String    @map("phone_number")
+  postalCode                        String    @map("postal_code")
+  address1                          String
+  address2                          String
+  emergencyContactName              String    @map("emergency_contact_name")
+  emergencyContactPhone             String    @map("emergency_contact_phone")
+  emergencyContactRelationship      String    @map("emergency_contact_relationship")
+  profileImageUrl                   String?   @map("profile_image_url")
+  bio                               String?
+  centerId                          String    @map("center_id")
+  createdAt                         DateTime  @default(now())  @db.Timestamptz(6) @map("created_at")
+  updatedAt                         DateTime  @updatedAt       @db.Timestamptz(6) @map("updated_at")
+
+  // relations
+  requests          Request[] @relation("RequestOwner")
+  matchedRequests   Request[] @relation("RequestMatchedSupporter")
+  orders            Order[]
+  // 【追加】AuthTicketとのリレーション
+  authTickets       AuthTicket[] // このユーザーに対して発行されたログインチケット
+
+  @@map("users")
+}
+
+// ----------------------------------------
+// auth_ticketsテーブル（QRコードログイン用ワンタイムトークン）
+// ----------------------------------------
+model AuthTicket {
+  id          String    @id @default(uuid())
+  token       String    @unique @db.Text // QRコードに埋め込むワンタイムトークン。一意制約が必須
+  userId      String    @map("user_id") // ログイン対象のユーザーID（Firebase UID）
+  expiresAt   DateTime  @map("expires_at") // トークンの有効期限
+  isUsed      Boolean   @default(false) // 使用済みフラグ（再利用防止のため、使用後にtrueに設定）
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // relations
+  user        User      @relation(fields: [userId], references: [id])
+
+  // パフォーマンス向上のため、照合に必要なフィールドにインデックスを設定
+  @@index([token, expiresAt, isUsed])
+
+  @@map("auth_tickets")
+}
+
+
+// ----------------------------------------
+// requestsテーブル（依頼）
+// ----------------------------------------
+model Request {
+  id                        Int       @id @default(autoincrement())
+  userId                    String    @map("user_id")
+  title                     String
+  description               String?
+  status                    RequestStatus @default(open)
+  requestedAt               DateTime  @default(now()) @db.Timestamptz(6) @map("requested_at")
+
+  // 日付は Postgres の DATE を使用
+  scheduledDate             DateTime  @db.Date @map("scheduled_date")
+  // ひとまず "HH:mm" の string で運用
+  scheduledStartTime        String?   @map("scheduled_start_time")
+  scheduledEndTime          String?   @map("scheduled_end_time")
+  scheduledDurationMinutes  Int?      @map("scheduled_duration_minutes")
+
+  workLocation1             String    @map("work_location1")
+  workLocation2             String?   @map("work_location2")
+
+  matchedSupporterId        String?   @map("matched_supporter_id") // openに戻す時は NULL
+  centerId                  String?   @map("center_id")
+
+  createdAt                 DateTime  @default(now())  @db.Timestamptz(6) @map("created_at")
+  updatedAt                 DateTime  @updatedAt       @db.Timestamptz(6) @map("updated_at")
+
+  // relations
+  user              User      @relation("RequestOwner", fields: [userId], references: [id], onDelete: Restrict)
+  matchedSupporter  User?     @relation("RequestMatchedSupporter", fields: [matchedSupporterId], references: [id], onDelete: SetNull)
+  orders            Order[]
+
+  // indexes
+  @@index([status, requestedAt])
+  @@index([userId, status])
+
+  @@map("requests")
+}
+
+// ----------------------------------------
+// ordersテーブル（受注）
+// ----------------------------------------
+model Order {
+  id            Int       @id @default(autoincrement())
+  requestId     Int       @map("request_id")
+  supporterId   String    @map("supporter_id")
+  status        OrderStatus
+  createdAt     DateTime  @default(now())  @db.Timestamptz(6) @map("created_at")
+  updatedAt     DateTime  @updatedAt       @db.Timestamptz(6) @map("updated_at")
+
+  // relations
+  request       Request   @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  supporter     User      @relation(fields: [supporterId], references: [id], onDelete: Restrict)
+
+  // 同一サポーターが同じ依頼に重複申込しない
+  @@unique([requestId, supporterId])
+
+  // supporter-based の除外判定を速く
+  @@index([supporterId, requestId])
+
+  @@map("orders")
+}
+
+// ----------------------------------------
+// menuテーブル（依頼メニュー：全センター共通）
+// ----------------------------------------
+model Menu {
+  id                    Int     @id @default(autoincrement())
+  name                  String
+  userDescription       String? @db.Text @map("user_description")
+  supporterDescription  String? @db.Text @map("supporter_description")
+  @@map("menu")
+}
+
+// ----------------------------------------
+// centersテーブル
+// ----------------------------------------
+model Center {
+  id            String    @id
+  name          String
+  email         String
+  phoneNumber   String    @map("phone_number")
+  postalCode    String    @map("postal_code")
+  address1      String
+  address2      String
+  isActive      Boolean   @map("is_active")
+  createdAt     DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
+  updatedAt     DateTime @updatedAt      @db.Timestamptz(6) @map("updated_at")
+
+  @@map("centers")
+  @@index([isActive])
+}

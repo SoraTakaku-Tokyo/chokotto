@@ -1,0 +1,129 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    env_file:
+      - ./.env.dev
+    environment:
+      # - DOCKER_ENV=true
+      # ホストOSのブラウザがAPIにアクセスするためのURLを明示的に設定
+      # この設定は .env.dev と併用されます
+      - NEXT_PUBLIC_API_URL=http://localhost:3001
+    volumes:
+      - ./apps/web:/app/apps/web
+      - /app/node_modules
+      - /app/apps/web/node_modules
+    command: sh -c "test -d node_modules || pnpm i --prefer-offline && pnpm dev"
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000"]
+      interval: 10s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    env_file:
+      - ./apps/api/.env
+
+    volumes:
+      - ./apps/api:/app/apps/api
+      - ./pnpm-lock.yaml:/app/pnpm-lock.yaml
+      - ./package.json:/app/package.json
+      - ./pnpm-workspace.yaml:/app/pnpm-workspace.yaml
+      - /app/node_modules
+      - /app/apps/api/node_modules
+      - ./firebase-admin-key.json:/etc/secrets/firebase-admin-key.json
+    command: sh -c "test -d node_modules || pnpm i --prefer-offline && pnpm dev"
+    ports:
+      - "3001:3001"
+      - "5555:5555"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 20
+
+  worker:
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile
+    env_file:
+      - ./.env.dev
+    volumes:
+      - ./apps/worker:/app/apps/worker
+      - ./pnpm-lock.yaml:/app/pnpm-lock.yaml
+      - ./package.json:/app/package.json
+      - ./pnpm-workspace.yaml:/app/pnpm-workspace.yaml
+      - /app/node_modules
+      - /app/apps/worker/node_modules
+    command: sh -c "test -d node_modules || pnpm i --prefer-offline && pnpm dev"
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "/app/apps/worker/healthcheck.js"]
+      interval: 10s
+      timeout: 3s
+      retries: 20
+
+  nginx:
+    image: nginx:1.27-alpine
+    volumes:
+      - ./infra/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "80:80"
+    depends_on:
+      web:
+        condition: service_started
+      api:
+        condition: service_started
+
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: app
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d app"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7.4-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  mailpit:
+    image: axllent/mailpit:v1.17
+    ports:
+      - "8025:8025"
+    environment:
+      MP_UI_BIND_ADDR: 0.0.0.0:8025
+      MP_SMTP_BIND_ADDR: 0.0.0.0:1025
+
+volumes:
+  db-data:

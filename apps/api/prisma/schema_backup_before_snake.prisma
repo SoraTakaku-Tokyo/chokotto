@@ -1,0 +1,153 @@
+// schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ===== Enums =====
+enum Role {
+  user
+  supporter
+}
+
+enum RequestStatus {
+  open       //引き受け待ち
+  matched　　//引受済み
+  confirmed  //電話済み
+  completed  //完了
+  canceled   //依頼取消
+  expired    //期限切れ
+}
+
+enum OrderStatus {
+  matched    //引受済み
+  confirmed  //電話済み
+  decline    //サポーターからの辞退
+  refusal    //利用者からのサポーター交代要請
+  completed  //完了
+  canceled   //依頼取消
+}
+
+// ===== Models =====
+
+// Userテーブル
+model User {
+  id      String  @id           // Firebase UIDが入る
+  identity_verified             Boolean  @default(false)
+  role    Role    @default(user)
+    family_name                   String
+  first_name                    String
+  family_name_kana              String
+  first_name_kana               String
+  birthday                      DateTime
+  gender                        String
+  email                         String   @unique
+  phone_number                  String
+  postal_code                   String
+  address1                      String
+  address2                      String
+  emergency_contact_name         String
+  emergency_contact_phone        String
+  emergency_contact_relationship String
+  profile_image_url              String?
+  bio                            String?
+  center_id                      String
+  created_at                    DateTime @default(now())
+  updated_at                    DateTime @updatedAt
+
+  // relations
+  requests           Request[] @relation("RequestOwner")
+  matchedRequests    Request[] @relation("RequestMatchedSupporter")
+  orders             Order[]
+
+  @@map("users")
+}
+
+// Requestテーブル
+model Request {
+  id                     Int            @id @default(autoincrement())
+  userId                 String
+  title                  String
+  description            String?
+  status                 RequestStatus　@default(open)
+  requestedAt            DateTime       @default(now()) @db.Timestamptz(6)
+
+  // 日付は Postgres の DATE を使用
+  scheduledDate          DateTime       @db.Date
+  // ひとまず "HH:mm" の string で運用
+  scheduledStartTime     String?
+  scheduledEndTime       String?
+  scheduledDurationMinutes Int?
+
+  workLocation1          String
+  workLocation2          String?
+
+  matchedSupporterId     String?        // openに戻す時は NULL
+  centerId               String?
+
+  createdAt              DateTime       @default(now())  @db.Timestamptz(6)
+  updatedAt              DateTime       @updatedAt        @db.Timestamptz(6)
+
+  // relations
+  user               User    @relation("RequestOwner", fields: [userId], references: [id], onDelete: Restrict)
+  matchedSupporter   User?   @relation("RequestMatchedSupporter", fields: [matchedSupporterId], references: [id], onDelete: SetNull)
+  orders             Order[]
+
+  // indexes
+  @@index([status, requestedAt])
+  @@index([userId, status])
+
+  @@map("requests")
+}
+
+// 受注テーブル（サポーターID×依頼IDが1レコード）
+model Order {
+  id           Int          @id @default(autoincrement())
+  requestId    Int
+  supporterId  String
+  status       OrderStatus
+  createdAt    DateTime       @default(now())  @db.Timestamptz(6)
+  updatedAt    DateTime       @updatedAt        @db.Timestamptz(6)
+
+  // relations
+  request      Request      @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  supporter    User         @relation(fields: [supporterId], references: [id], onDelete: Restrict)
+
+  // 同一サポーターが同じ依頼に重複申込しない
+  @@unique([requestId, supporterId])
+
+  // supporter-based の除外判定を速く
+  @@index([supporterId, requestId])
+
+  @@map("orders")
+}
+
+/// 依頼メニューテーブル（全センター共通）
+model Menu {
+  id                    Int     @id @default(autoincrement())
+  name                  String
+  userDescription       String? @db.Text @map("user_description")
+  supporterDescription  String? @db.Text @map("supporter_description")
+  @@map("menu")
+}
+
+/// センターテーブル
+model Center {
+  id          String   @id @map("id") 
+  name        String
+  email       String
+  phoneNumber String   @map("phone_number")
+  postalCode  String   @map("postal_code")
+  address1    String
+  address2    String
+  isActive    Boolean  @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("centers")
+  @@index([isActive])
+}

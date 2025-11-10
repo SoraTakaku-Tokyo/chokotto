@@ -1,0 +1,105 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .user-root {
+    /* 利用者側、文字サイズ倍率 */
+    --fs-scale: 1.2;
+  }
+
+  .user-root .text-xs {
+    font-size: calc(0.75rem * var(--fs-scale));
+    line-height: calc(1rem * var(--fs-scale));
+  }
+  .user-root .text-sm {
+    font-size: calc(0.875rem * var(--fs-scale));
+    line-height: calc(1.25rem * var(--fs-scale));
+  }
+  .user-root .text-base {
+    font-size: calc(1rem * var(--fs-scale));
+    line-height: calc(1.5rem * var(--fs-scale));
+  }
+  .user-root .text-lg {
+    font-size: calc(1.125rem * var(--fs-scale));
+    line-height: calc(1.75rem * var(--fs-scale));
+  }
+  .user-root .text-xl {
+    font-size: calc(1.25rem * var(--fs-scale));
+    line-height: calc(1.75rem * var(--fs-scale));
+  }
+  .user-root .text-2xl {
+    font-size: calc(1.5rem * var(--fs-scale));
+    line-height: calc(2rem * var(--fs-scale));
+  }
+  .user-root .text-3xl {
+    font-size: calc(1.875rem * var(--fs-scale));
+    line-height: calc(2.25rem * var(--fs-scale));
+  }
+  /* 必要に応じて拡張：text-4xl 以降も同様に */
+}
+
+:root {
+  /* 共通トークン */
+  --surface: #fff;
+
+  /* Primary：添付の明るい水色 */
+  --btn-primary-bg: #7fe3ea;
+  --btn-primary-hov: #6ad7df;
+  --btn-primary-ring: #22a2b4;
+
+  /* Secondary：ログアウト等向けに少し暗めの水色系 */
+  --btn-secondary-bg: #379da4;
+  --btn-secondary-hov: #2f8b91;
+  --btn-secondary-ring: #166a70;
+  --btn-secondary-fg: #f8fafc;
+
+  /* そのまま据え置き */
+  --btn-ghost-fg: #1f2937; /* gray-800 */
+  --btn-ghost-hov: #f3f4f6; /* gray-100 */
+
+  /* 共通 */
+  --radius-lg: 0.75rem;
+  --shadow-md: 0 4px 8px rgba(2, 6, 23, 0.06);
+
+  /* 利用者側テーマ */
+  --user-bg: #ffe0d0;
+  --user-fg: #222;
+  --user-primary-bg: #f4753f;
+  --user-primary-hov: #e05e28;
+  --user-primary-ring: #b3471f;
+  --user-secondary-bg: #f9a9a9; /* 要再検討！ */
+  --user-secondary-hov: #f59494;
+  --user-secondary-ring: #e06b6b;
+  --user-tertiary-bg: #6b6b6b;
+  --user-tertiary-hov: #5b5b5b;
+  --user-tertiary-ring: #3d3d3d;
+
+  /* サポーター側テーマ */
+  --supporter-bg: #ebebec; /* 薄めのサポーター面色 #f6f9ff*/
+  --supporter-fg: #0f172a; /* テキスト色 */
+}
+
+body.user {
+  --surface: var(--user-bg);
+  background: var(--user-bg);
+  color: var(--user-fg);
+  font-size: 18px;
+  line-height: 1.75;
+}
+
+body.theme-user {
+  --surface: var(--user-bg);
+}
+body.theme-supporter {
+  --surface: var(--supporter-bg);
+}
+
+body {
+  background: var(--surface);
+}
+
+/* フッターも同じ面色に */
+.app-footer {
+  background: var(--surface);
+}

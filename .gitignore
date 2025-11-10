@@ -1,0 +1,14 @@
+node_modules
+.env
+.env.*
+!.env.example
+**/.next
+/apps/*/dist
+/apps/*/coverage
+/.DS_Store
+docker-data/
+apps/web/test-results/
+.pnpm-store/
+apps/web/.env.local
+# Firebase Admin SDK サービスアカウント秘密鍵（機密情報のためコミット禁止）
+firebase-admin-key.json

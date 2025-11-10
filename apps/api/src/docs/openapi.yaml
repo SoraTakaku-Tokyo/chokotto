@@ -1,0 +1,476 @@
+openapi: 3.0.3
+info:
+  title: ご近所サポートちょこっと API設計書
+  version: 1.0.0
+  description: >
+    高齢者 × サポーター マッチングアプリ「ちょこっと」のAPI仕様書です。  
+    各エンドポイントの概要・入力・出力・ステータスコードを示します。
+servers:
+  - url: http://localhost:3001/api
+    description: 開発環境
+
+tags:
+  - name: Auth
+    description: Firebase 認証・QRログイン関連
+  - name: GPT Proxy
+    description: OpenAI による自然文解析
+  - name: Normalize Time
+    description: 時間表現の正規化
+  - name: Requests
+    description: 依頼情報の取得・登録・詳細表示
+  - name: Orders
+    description: 受注・ステータス更新・履歴取得
+
+paths:
+  /auth/qr-login:
+    post:
+      tags:
+        - Auth
+      summary: QRコードログイン
+      description: >
+        QRコードで生成された一時トークンを検証し、対応するFirebase UIDのCustom Tokenを発行します。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                  example: "abcd1234efgh5678"
+      responses:
+        "200":
+          description: 成功時にFirebase Custom Tokenを返します。
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  customToken:
+                    type: string
+                    example: "eyJhbGciOiJSUzI1NiIsImtpZCI6IjJh..."
+        "400":
+          description: Tokenが指定されていない
+        "401":
+          description: 無効または期限切れのトークン
+        "500":
+          description: サーバーエラー
+
+  /gpt-proxy:
+    post:
+      tags:
+        - GPT Proxy
+      summary: 自然文から日付・時間・場所などを抽出する
+      description: >
+        ユーザーの自然文をOpenAI APIで解析し、「日時」「時間」「場所」「その他」をJSON形式で返します。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties:
+                text:
+                  type: string
+                  example: "明日の午後2時に市役所で申請書を出したい"
+      responses:
+        "200":
+          description: 解析結果を返します
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  date:
+                    type: string
+                    example: "2025年11月9日"
+                  time:
+                    type: string
+                    example: "午後2時"
+                  place:
+                    type: string
+                    example: "市役所"
+                  normalizedTime:
+                    type: object
+                    example:
+                      scheduledStartTime: "14:00"
+                      scheduledEndTime: "15:00"
+        "400":
+          description: text が指定されていない
+        "500":
+          description: サーバー内部エラー
+
+  /normalize-time:
+    post:
+      tags:
+        - Normalize Time
+      summary: 時間表現の正規化
+      description: >
+        「午前」「午後」「夕方」などの自然文を解析し、時間範囲を正規化します。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [timeText]
+              properties:
+                timeText:
+                  type: string
+                  example: "午後"
+      responses:
+        "200":
+          description: 正規化成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  scheduledStartTime:
+                    type: string
+                    example: "13:00"
+                  scheduledEndTime:
+                    type: string
+                    example: "17:00"
+                  normalizedText:
+                    type: string
+                    example: "13:00から17:00まで"
+        "400":
+          description: 入力エラー
+
+  /requests:
+    get:
+      tags:
+        - Requests
+      summary: 依頼リストを取得
+      description: >
+        Firebase 認証により、トークン内の `role` と `userId` を元に取得対象を自動判定します。  
+        - role = "user": 自分の依頼（未完了・未キャンセル）  
+        - role = "supporter": open の依頼（辞退・交代希望を除外）
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 依頼一覧の取得に成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Request"
+        "401":
+          description: 認証エラー
+        "500":
+          description: サーバー内部エラー
+
+    post:
+      tags:
+        - Requests
+      summary: 新規依頼を登録
+      description: >
+        Firebase 認証済みユーザーが新しい依頼を登録します。  
+        リクエストは Zod スキーマ `RequestCreateSchema` によって検証されます。
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - description
+                - scheduledDate
+                - scheduledStartTime
+                - scheduledEndTime
+              properties:
+                description:
+                  type: string
+                  example: "スーパーで牛乳と卵を買ってきてください。"
+                scheduledDate:
+                  type: string
+                  format: date
+                  example: "2025-11-10"
+                scheduledStartTime:
+                  type: string
+                  example: "10:00"
+                scheduledEndTime:
+                  type: string
+                  example: "11:00"
+                location1:
+                  type: string
+                  example: "マツモトキヨシ"
+      responses:
+        "201":
+          description: 新規依頼登録成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Request"
+        "400":
+          description: バリデーションエラー
+        "401":
+          description: 未認証
+        "404":
+          description: ユーザーが存在しない
+        "500":
+          description: サーバー内部エラー
+
+  /requests/{requestId}:
+    get:
+      tags:
+        - Requests
+      summary: 依頼詳細を取得
+      description: >
+        Firebase 認証済みユーザーの `role` に応じて、  
+        利用者またはサポーターの詳細情報を含む依頼内容を返します。  
+        - supporter: 依頼者情報を含む  
+        - user: サポーター情報を含む
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: requestId
+          required: true
+          schema:
+            type: integer
+            example: 123
+      responses:
+        "200":
+          description: 依頼詳細取得成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RequestDetail"
+        "400":
+          description: 無効な requestId
+        "404":
+          description: 該当依頼が存在しない
+        "500":
+          description: サーバー内部エラー
+
+  /orders:
+    get:
+      tags:
+        - Orders
+      summary: サポーターの引受一覧を取得
+      description: >
+        ログイン中のサポーターが引き受けた依頼一覧を取得します。
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 引受一覧取得成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OrderSummary"
+        "403":
+          description: サポーター以外禁止
+        "404":
+          description: データなし
+        "500":
+          description: サーバーエラー
+
+  /orders/{requestId}:
+    post:
+      tags:
+        - Orders
+      summary: 依頼を受注する
+      description: >
+        指定した requestId の依頼を "matched" に更新し、order を作成します。
+      parameters:
+        - in: path
+          name: requestId
+          required: true
+          schema:
+            type: integer
+            example: 101
+      responses:
+        "201":
+          description: 受注登録成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  order:
+                    $ref: "#/components/schemas/Order"
+        "403":
+          description: サポーターのみ許可
+        "404":
+          description: 指定された依頼なし
+        "500":
+          description: サーバーエラー
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Request:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "req001"
+        title:
+          type: string
+          example: "買い物代行"
+        description:
+          type: string
+          example: "シャンプーと洗剤を買ってきてほしいです。"
+        status:
+          type: string
+          enum: [open, matched, confirmed, completed, canceled, expired]
+          example: "open"
+        scheduledDate:
+          type: string
+          example: "2025-11-10"
+        scheduledStartTime:
+          type: string
+          example: "10:00"
+        scheduledEndTime:
+          type: string
+          example: "11:00"
+        workLocation1:
+          type: string
+          example: "マツモトキヨシ"
+        workLocation2:
+          type: string
+          example: "旭町1丁目"
+        user:
+          type: object
+          properties:
+            id:
+              type: string
+              example: "user001"
+            role:
+              type: string
+              example: "user"
+            gender:
+              type: string
+              example: "女性"
+            address1:
+              type: string
+              example: "旭町1丁目"
+            ageGroup:
+              type: string
+              example: "80代"
+            bio:
+              type: string
+              example: "耳が遠いのでゆっくり話してください。"
+
+    RequestDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 123
+        title:
+          type: string
+          example: "買い物代行"
+        description:
+          type: string
+          example: "スーパーで牛乳と卵を買ってきてください。"
+        status:
+          type: string
+          example: "open"
+        scheduledDate:
+          type: string
+          example: "2025-11-10"
+        scheduledStartTime:
+          type: string
+          example: "10:00"
+        scheduledEndTime:
+          type: string
+          example: "11:00"
+        user:
+          type: object
+          nullable: true
+          properties:
+            fullName:
+              type: string
+              example: "井上節子"
+            ageGroup:
+              type: string
+              example: "80代"
+            address1:
+              type: string
+              example: "旭町1丁目"
+        supporter:
+          type: object
+          nullable: true
+          properties:
+            supporterName:
+              type: string
+              example: "サポーター太郎"
+            supporterPhone:
+              type: string
+              example: "090-1234-5678"
+            supporterNote:
+              type: string
+              example: "近所のボランティアです"
+            supporterAvatarUrl:
+              type: string
+              example: "https://example.com/avatar.png"
+
+    Order:
+      type: object
+      properties:
+        requestId:
+          type: integer
+          example: 101
+        supporterId:
+          type: string
+          example: "supporter001"
+        status:
+          type: string
+          enum: [matched, confirmed, completed, canceled, decline, refusal]
+          example: "matched"
+
+    OrderSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 101
+        title:
+          type: string
+          example: "買い物代行"
+        status:
+          type: string
+          example: "confirmed"
+        orderStatus:
+          type: string
+          example: "matched"
+        user:
+          type: object
+          properties:
+            id:
+              type: string
+              example: "user001"
+            role:
+              type: string
+              example: "user"
+            gender:
+              type: string
+              example: "女性"
+            address1:
+              type: string
+              example: "旭町1丁目"
+            ageGroup:
+              type: string
+              example: "80代"
+            bio:
+              type: string
+              example: "耳が遠いのでゆっくり話してください。"

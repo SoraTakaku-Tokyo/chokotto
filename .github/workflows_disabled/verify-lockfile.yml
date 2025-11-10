@@ -1,0 +1,62 @@
+name: Verify lockfile is in sync
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lockfile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm 9.6.0
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.6.0
+          run_install: false
+
+      - name: Setup Node.js (LTS) + cache
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            **/pnpm-lock.yaml  # モノレポの保険
+
+      - name: Show versions (debug)
+        run: |
+          node -v
+          pnpm -v
+          command -v pnpm || true
+
+      - name: Install workspace dependencies
+        run: pnpm install --prefer-offline
+
+      - name: Show Prettier version (debug)
+        run: pnpm prettier --version
+
+      # lockfile と package.json がズレているとPRが失敗します
+      - name: Verify lockfile sync (workspace)
+        run: pnpm -w install --frozen-lockfile
+
+      # ついでにワークスペースの型/構文ミス検知を軽く（任意）
+      # 失敗が多ければ消してOK
+      - name: Type check (web/api/worker) - optional
+        run: |
+          pnpm -r --filter ./apps/web tsc --noEmit || true
+          pnpm -r --filter ./apps/api tsc --noEmit || true
+          pnpm -r --filter ./apps/worker tsc --noEmit || true
+
+      - name: Lint check (web/api/worker)
+        run: |
+          pnpm -r --filter ./apps/web lint
+          pnpm -r --filter ./apps/api lint
+          pnpm -r --filter ./apps/worker lint
+
+      - name: Prettier format check (workspace)
+        run: pnpm format:check
