@@ -20,7 +20,7 @@ async function main() {
   const users = await prisma.user.createMany({
     data: [
       {
-        id: "ZP6l5FZf8uMMnPHRcoOHGIjUD6o1",
+        id: "p5brudaf0vTTO4d3lbsaKSRtiWg2",
         identityVerified: true,
         role: "user",
         familyName: "井上",
@@ -42,7 +42,7 @@ async function main() {
         centerId: "C001"
       },
       {
-        id: "MnF4AGXUopMCX8RgYa5hqY7Dsam1",
+        id: "uYY5LKi9ZsfrdP5LmHhBkO3TLw62",
         identityVerified: true,
         role: "user",
         familyName: "山本",
@@ -64,7 +64,7 @@ async function main() {
         centerId: "C001"
       },
       {
-        id: "K5w5gAs2mlaht0AzK5LP15DgD7x1",
+        id: "BuUmfPzwDpfZi4mtPACvdQrMiE73",
         identityVerified: true,
         role: "supporter",
         familyName: "木下",
@@ -86,7 +86,7 @@ async function main() {
         centerId: "C001"
       },
       {
-        id: "C31Sv6MkE9ZS8YzNzvWxtMy0oOT2",
+        id: "rCVyOuL9zqVCJgoiTdGtUgIrpy82",
         identityVerified: true,
         role: "user",
         familyName: "伊藤",
@@ -116,7 +116,7 @@ async function main() {
   await prisma.request.createMany({
     data: [
       {
-        userId: "MnF4AGXUopMCX8RgYa5hqY7Dsam1",
+        userId: "uYY5LKi9ZsfrdP5LmHhBkO3TLw62",
         title: "買い物代行",
         description: "犬のペットフードを買ってきて欲しい",
         status: RequestStatus.open,
@@ -129,7 +129,7 @@ async function main() {
         centerId: "C001"
       },
       {
-        userId: "C31Sv6MkE9ZS8YzNzvWxtMy0oOT2",
+        userId: "rCVyOuL9zqVCJgoiTdGtUgIrpy82",
         title: "買い物代行",
         description: "同じ蛍光灯の替えを買ってきてほしいです",
         status: RequestStatus.open,
@@ -142,7 +142,7 @@ async function main() {
         centerId: "C001"
       },
       {
-        userId: "MnF4AGXUopMCX8RgYa5hqY7Dsam1",
+        userId: "uYY5LKi9ZsfrdP5LmHhBkO3TLw62",
         title: "買い物代行",
         description: "当日リストをお渡しします",
         status: RequestStatus.open,
@@ -162,7 +162,7 @@ async function main() {
   // --- Orders ---
   await prisma.order.createMany({
     data: [
-      { requestId: 1, supporterId: "MnF4AGXUopMCX8RgYa5hqY7Dsam1", status: OrderStatus.refusal }
+      { requestId: 1, supporterId: "BuUmfPzwDpfZi4mtPACvdQrMiE73", status: OrderStatus.refusal }
     ]
   });
 
