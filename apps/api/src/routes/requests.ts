@@ -18,11 +18,11 @@ router.get("/", requireAuth, async (req: AuthenticatedRequest, res: Response): P
     const { uid, role } = req.user!;
 
   // Firebase UID から DBユーザーを取得し、存在チェック
-    const user = await prisma.user.findUnique({
+    const appUser = await prisma.user.findUnique({
       where: { id: uid },
     });
 
-    if (!user) {
+    if (!appUser) {
       res.status(404).json({ error: "ユーザー登録が見つかりません。" });
       return;
     }
@@ -119,7 +119,7 @@ router.post("/", requireAuth, (async (req: AuthenticatedRequest, res: Response) 
     const { uid } = req.user!;
 
     // Firebase UID から DBユーザーを取得し、存在チェックも
-    const user = await prisma.user.findUnique({
+    const appUser = await prisma.user.findUnique({
       where: { id: uid },
       select: {
         id: true,
@@ -128,7 +128,7 @@ router.post("/", requireAuth, (async (req: AuthenticatedRequest, res: Response) 
       },
     });
 
-    if (!user) {
+    if (!appUser) {
       res.status(404).json({ error: "ユーザー登録が見つかりません。" });
       return;
     }
@@ -164,7 +164,7 @@ router.post("/", requireAuth, (async (req: AuthenticatedRequest, res: Response) 
 
 // GET /api/requests/:requestId
 // ★依頼詳細取得API★
-// (一時停止中）req の型を AuthenticatedRequest に明示的に設定
+// req の型を AuthenticatedRequest に明示的に設定
 
 router.get("/:requestId", requireAuth, (async (
   req: AuthenticatedRequest,
@@ -172,14 +172,28 @@ router.get("/:requestId", requireAuth, (async (
 ): Promise<void> => {
   try {
     const { requestId } = req.params;
-    // req.user は AuthenticatedRequest の型定義により CustomRequestUser | undefined となる
-    // const { role } = req.user || {};
-    const role = req.header("X-Debug-Role") as "user" | "supporter" | undefined;
+    const { uid, role } = req.user!;
 
     // requestIdが数値かどうかのチェック
     const requestIdNum = Number(requestId);
     if (Number.isNaN(requestIdNum)) {
-      res.status(400).json({ error: "requestId must be a number" });
+      res.status(400).json({ error: "リクエストIDは数値を入力してください" });
+      return;
+    }
+
+    // Firebase UID から DBユーザーを取得し、存在チェック
+    const appUser = await prisma.user.findUnique({
+      where: { id: uid },
+    });
+
+    if (!appUser) {
+      res.status(404).json({ error: "ユーザー登録が見つかりません。" });
+      return;
+    }
+
+    // roleがnullでないかチェック
+    if (!role) {
+      res.status(400).json({ error: "ユーザーのロール情報が不明です。" });
       return;
     }
 
@@ -193,7 +207,7 @@ router.get("/:requestId", requireAuth, (async (
     });
 
     if (!request) {
-      res.status(404).json({ error: "Request not found" });
+      res.status(404).json({ error: "依頼が見つかりません。" });
       return;
     }
 
