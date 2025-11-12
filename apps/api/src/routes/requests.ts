@@ -10,27 +10,39 @@ const router = Router();
 // GET /api/requests
 // ★依頼リスト取得API★
 // Firebase認証あり。
-// （一時停止中）トークンの role と userId を元に条件分岐。
+// トークンの uid とデータベースの role を元に条件分岐。
 // status ≠ "completed", "canceled", "expired"
 
 router.get("/", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const { role, userId } = req.user || {};
+    const { uid, role } = req.user!;
+    console.log("ログイン中のユーザー:", uid, role);
 
+  // Firebase UID から DBユーザーを取得し、存在チェック
+    const appUser = await prisma.user.findUnique({
+      where: { id: uid },
+    });
+
+    if (!appUser) {
+      res.status(404).json({ error: "User not found in DB" });
+      return;
+    }
+
+    // 役割別で絞り込み条件を準備
     let baseWhere: Prisma.RequestWhereInput = {};
 
-    // role別条件分岐（Firebaseトークンから取得したroleとuserIdでチェック）
-    if (role === "user" && userId) {
+    // role別条件分岐
+    if (role === "user" && uid) {
       // 利用者側：閉じてないもの＆自分が出した依頼のみ
       baseWhere = {
         NOT: {
           status: { in: ["completed", "canceled", "expired"] }
         },
-        userId
+        userId: uid,
       };
     }
 
-    if (role === "supporter" && userId) {
+    if (role === "supporter" && uid) {
       // サポーター側：openのみ、decline/refusal除外
       baseWhere = {
         AND: [
@@ -39,7 +51,7 @@ router.get("/", requireAuth, async (req: AuthenticatedRequest, res: Response): P
             NOT: {
               orders: {
                 some: {
-                  supporterId: userId,
+                  supporterId: uid,
                   status: { in: ["decline", "refusal"] }
                 }
               }
@@ -49,11 +61,11 @@ router.get("/", requireAuth, async (req: AuthenticatedRequest, res: Response): P
       };
     }
 
-    // 依頼を取得
+    // 絞り込み条件に一致する依頼を取得
     const requests = await prisma.request.findMany({
       where: baseWhere,
       orderBy: {
-        scheduledDate: "asc" // 日付が早いものから順
+        scheduledDate: "asc" // 日付が早いもの順
       },
       include: {
         // 利用者情報も取得
