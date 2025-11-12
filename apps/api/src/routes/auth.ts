@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
-import admin from "../utils/firebaseAdmin"; // ステップ 1.3で作成したAdmin SDK
+import admin from "../lib/firebaseAdmin";
+
 // Prisma Clientのインスタンス（プロジェクト内の実装に合わせてインポート）
 const prisma = new PrismaClient();
 const router = Router();

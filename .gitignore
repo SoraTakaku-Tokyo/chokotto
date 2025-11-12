@@ -11,4 +11,4 @@ apps/web/test-results/
 .pnpm-store/
 apps/web/.env.local
 # Firebase Admin SDK サービスアカウント秘密鍵（機密情報のためコミット禁止）
-firebase-admin-key.json
+firebase-service-account.json
