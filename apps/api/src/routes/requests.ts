@@ -116,7 +116,7 @@ router.get("/", requireAuth, async (req: AuthenticatedRequest, res: Response): P
 router.post("/", requireAuth, (async (req: AuthenticatedRequest, res: Response) => {
   try {
 
-    const { uid } = req.user!;
+    const { uid, role } = req.user!;
 
     // Firebase UID から DBユーザーを取得し、存在チェックも
     const appUser = await prisma.user.findUnique({
@@ -131,6 +131,11 @@ router.post("/", requireAuth, (async (req: AuthenticatedRequest, res: Response) 
     if (!appUser) {
       res.status(404).json({ error: "ユーザー登録が見つかりません。" });
       return;
+    }
+
+    // 利用者以外は拒否
+    if (role !== "user") {
+      return res.status(403).json({ error: "利用者のみ依頼可能です" });
     }
 
     // Zodでバリデーション実行

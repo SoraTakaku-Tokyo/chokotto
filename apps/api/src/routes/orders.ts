@@ -9,7 +9,6 @@ const router = Router();
 // 現段階では Firebase 認証は未実装。
 // requestId は URLパラメータから受け取る。
 // userId は auth.ts（requireAuth）から受け取る。
-// 仮）　POST /api/orders/:requestId?userId=supporter001
 // 機能：
 // 1. 指定された requestId の依頼を "matched" に更新し、supporterId を設定
 // 2. orders テーブルに新しいレコードを追加
@@ -20,7 +19,7 @@ router.post("/:requestId", requireAuth, async (req, res) => {
     const { requestId } = req.params;
 
     // auth.tsからユーザー情報を取得
-    const { userId, role } = req.user || {};
+    const { uid, role } = req.user!;
 
     // サポーター以外は拒否
     if (role !== "supporter") {
@@ -43,10 +42,10 @@ router.post("/:requestId", requireAuth, async (req, res) => {
     const [updatedRequest, newOrder] = await prisma.$transaction([
       prisma.request.update({
         where: { id: Number(requestId) },
-        data: { status: "matched", matchedSupporterId: userId }
+        data: { status: "matched", matchedSupporterId: uid }
       }),
       prisma.order.create({
-        data: { requestId: Number(requestId), supporterId: userId, status: "matched" }
+        data: { requestId: Number(requestId), supporterId: uid, status: "matched" }
       })
     ]);
 
@@ -62,17 +61,13 @@ router.post("/:requestId", requireAuth, async (req, res) => {
 
 // PATCH /api/orders/:requestID
 //  ★依頼・受注ステータス更新API★
-// 現段階では Firebase 認証は未実装。
-// requestId をURLから、 更新後ステータスを リクエストボディから受け取る。
+// requestId をURLから、 更新後ステータスをリクエストボディから受け取る。
 // 機能：
 // 1. confirmed、completed、canceled ⇒ requestsデータとordersデータのステータス更新
 // 2. decline、refusal ⇒ ordersデータのステータス更新、requestsデータのmatchedsupporterIdを削除しopenに更新
 
 router.patch("/:requestId", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    // 今は特に使用しないが、requireAuthから受け取れる。
-    // const { userId, role } = req.user || {};
-
     // 受け取ったrequestId
     const { requestId } = req.params;
 
@@ -200,16 +195,13 @@ router.patch("/:requestId", requireAuth, async (req: AuthenticatedRequest, res) 
 
 // GET /api/orders
 //  ★引受リスト取得API★
-// requireAuth により、仮の userId と role が req.user に設定される。
-// 将来的に Firebase 対応になっても auth.ts の修正だけで対応可能。
 // 機能：
 // サポーターIDでordersデータにヒットがあったら
 // そのリクエストIDでrequestsを見に行き、一覧出力する
 
 router.get("/", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    // apps/api/src/middleware/auth.tsで注入されたユーザー情報を取得
-    const { userId, role } = req.user || {};
+    const { uid, role } = req.user!;
 
     // サポーター以外のアクセスは拒否
     if (role !== "supporter") {
@@ -218,10 +210,10 @@ router.get("/", requireAuth, async (req: AuthenticatedRequest, res) => {
 
     // サポーターの受注データ取得（対応する依頼情報と利用者情報を含む）
     const orders = await prisma.order.findMany({
-      where: { supporterId: userId },
+      where: { supporterId: uid },
       orderBy: {
         request: {
-          scheduledDate: "asc" // ← ここを修正！
+          scheduledDate: "asc"
         }
       },
       include: {
@@ -243,7 +235,7 @@ router.get("/", requireAuth, async (req: AuthenticatedRequest, res) => {
     });
 
     if (!orders || orders.length === 0) {
-      return res.status(404).json({ message: "引き受けた依頼はありません" });
+      return res.json([]);
     }
 
     // 年代を算出する関数

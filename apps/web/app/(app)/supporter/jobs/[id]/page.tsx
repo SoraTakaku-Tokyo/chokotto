@@ -28,51 +28,6 @@ type JobDetail = {
   workLocation1?: string;
 };
 
-// --- モックDB --- // 表示、API後に要修正←井上 節子 さん（イノウエ セツコ）／住所　の改行
-// const MOCK_DB: Record<string, JobDetail> = {
-//   "00001": {
-//     id: "00001",
-//     title: "外出付き添い",
-//     areaLine: "高野1丁目",
-//     whoLine: "80代　女性",
-//     date: "2025年9月10日（水）",
-//     timeWindow: "13:00〜15:00 の間で",
-//     duration: "2時間",
-//     placeLine: "外出先：中央総合病院",
-//     meetup: "集合場所：自宅",
-//     shortNote: "耳がかなり遠いです。",
-//     fullPerson: "井上 節子 さん（イノウエ セツコ）／住所：高野1丁目14-3／電話：999-999-9999",
-//     userImageUrl: "/user.png",
-//     longNote: "ながくて二時間です"
-//   },
-//   "00002": {
-//     id: "00002",
-//     title: "室内軽作業（15分まで）",
-//     areaLine: "〇〇3丁目",
-//     whoLine: "90代　男性",
-//     date: "2025年9月18日（木）",
-//     timeWindow: "13:00〜16:00 の間で",
-//     duration: "15分",
-//     placeLine: "場所：玄関",
-//     meetup: "集合場所：自宅",
-//     shortNote: "猫を2匹飼っています。よろしくお願いします。",
-//     longNote: "でんきゅうをこうかんしてほしい"
-//   },
-//   "00003": {
-//     id: "00003",
-//     title: "掃除・片付け",
-//     areaLine: "〇〇2丁目",
-//     whoLine: "70代　女性",
-//     date: "2025年9月19日（金）",
-//     timeWindow: "10:00〜16:00 の間で",
-//     duration: "60分",
-//     placeLine: "場所：居間",
-//     meetup: "集合場所：自宅",
-//     shortNote: "ゆっくり話してください。",
-//     longNote: "本棚のふるい本をすてたい"
-//   }
-// };
-
 export default function JobPage({ params }: { params: { id: string } }) {
   const sp = useSearchParams();
   const view = (sp.get("view") ?? "confirm") as "confirm" | "accepted" | "report";
@@ -97,25 +52,10 @@ export default function JobPage({ params }: { params: { id: string } }) {
       setNotice("この依頼を引き受けました！");
       // URLから flash を除去（再描画されても notice は state に残る）
       router.replace(`/supporter/jobs/${params.id}?view=accepted`, { scroll: false });
-
-      // 任意：数秒後に自動で消す
-      // const t = setTimeout(() => setNotice(null), 3000);
-      // return () => clearTimeout(t);
     }
   }, [flash, params.id, router]);
 
   useEffect(() => {
-    // こちらはモック呼び出しのコード
-    // setLoading(true);
-    // const data = MOCK_DB[params.id];
-    // if (data) {
-    //   setJob(data);
-    //   setError(null);
-    // } else {
-    //   setError("依頼が見つかりませんでした。");
-    // }
-    // setLoading(false);
-
     // APIから取得
     async function fetchJob() {
       setLoading(true);
@@ -171,7 +111,6 @@ export default function JobPage({ params }: { params: { id: string } }) {
 
       // API接続：受注新規登録
       await createOrder(Number(job!.id));
-      // await new Promise((r) => setTimeout(r, 400));
 
       router.replace(`/supporter/jobs/${job!.id}?view=accepted&flash=accepted`);
     } catch {
