@@ -16,15 +16,14 @@ const router = Router();
 router.get("/", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const { uid, role } = req.user!;
-    console.log("ログイン中のユーザー:", uid, role);
 
   // Firebase UID から DBユーザーを取得し、存在チェック
-    const appUser = await prisma.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: { id: uid },
     });
 
-    if (!appUser) {
-      res.status(404).json({ error: "User not found in DB" });
+    if (!user) {
+      res.status(404).json({ error: "ユーザー登録が見つかりません。" });
       return;
     }
 
@@ -111,38 +110,31 @@ router.get("/", requireAuth, async (req: AuthenticatedRequest, res: Response): P
 
 // POST /api/requests
 // ★依頼新規登録API★
-// （一時停止）Firebase 認証が有効：req.user.uid を利用してユーザーIDを取得
-// （一時停止）req の型を AuthenticatedRequest に明示的に設定
+// Firebase 認証が有効：req.user.uid を利用してユーザーIDを取得
+// req の型を AuthenticatedRequest に明示的に設定
 
 router.post("/", requireAuth, (async (req: AuthenticatedRequest, res: Response) => {
   try {
-    // req.user は AuthenticatedRequest の型定義により CustomRequestUser | undefined となる
-    // const userId = req.user?.userId;
 
-    // 暫定対応：ユーザーID固定
-    const userId = "ZP6l5FZf8uMMnPHRcoOHGIjUD6o1";
+    const { uid } = req.user!;
 
-    if (!userId) {
-      // requireAuth がトークンチェックを行うため、通常はここには来ないが、念のためチェック
-      return res.status(401).json({ error: "Unauthorized: user not found in token" });
+    // Firebase UID から DBユーザーを取得し、存在チェックも
+    const user = await prisma.user.findUnique({
+      where: { id: uid },
+      select: {
+        id: true,
+        address1: true,
+        centerId: true,
+      },
+    });
+
+    if (!user) {
+      res.status(404).json({ error: "ユーザー登録が見つかりません。" });
+      return;
     }
 
     // Zodでバリデーション実行
     const parsed = RequestCreateSchema.parse(req.body);
-
-    // usersテーブルから住所１、センターIDを取得
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        address1: true,
-        centerId: true
-      }
-    });
-
-    if (!user) {
-      return res.status(404).json({ error: "指定されたユーザーが見つかりません" });
-    }
 
     const newRequest = await prisma.request.create({
       data: {
@@ -152,23 +144,23 @@ router.post("/", requireAuth, (async (req: AuthenticatedRequest, res: Response) 
         scheduledDate: new Date(parsed.scheduledDate),
         scheduledStartTime: parsed.scheduledStartTime,
         scheduledEndTime: parsed.scheduledEndTime,
-        workLocation1: parsed.location1 || "(入力なし）",
+        workLocation1: parsed.location1,
         workLocation2: user.address1,
         centerId: user.centerId
       }
     });
 
     res.status(201).json(newRequest);
-  } catch (err) {
-    if (err instanceof ZodError) {
-      res.status(400).json({ error: err.errors });
-    } else if (err instanceof Error) {
-      res.status(400).json({ error: err.message });
+  } catch (error) {
+    if (error instanceof ZodError) {
+      res.status(400).json({ error: error.errors });
+    } else if (error instanceof Error) {
+      res.status(400).json({ error: error.message });
     } else {
       res.status(500).json({ error: "unknown error" });
     }
   }
-}) as RequestHandler); // RequestHandlerへのキャストは維持
+}) as RequestHandler);
 
 // GET /api/requests/:requestId
 // ★依頼詳細取得API★
