@@ -143,15 +143,15 @@ router.post("/", requireAuth, (async (req: AuthenticatedRequest, res: Response) 
 
     const newRequest = await prisma.request.create({
       data: {
-        userId: user.id,
+        userId: appUser.id,
         title: "買い物代行",
         description: parsed.description,
         scheduledDate: new Date(parsed.scheduledDate),
         scheduledStartTime: parsed.scheduledStartTime,
         scheduledEndTime: parsed.scheduledEndTime,
         workLocation1: parsed.location1,
-        workLocation2: user.address1,
-        centerId: user.centerId
+        workLocation2: appUser.address1,
+        centerId: appUser.centerId
       }
     });
 
