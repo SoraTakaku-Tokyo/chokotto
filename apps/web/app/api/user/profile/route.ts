@@ -43,7 +43,7 @@ export async function GET() {
     emergencyRelation: "子",
     emergencyTel: "090-2222-2222",
     noteForSupporter: "難聴があり聞き取りにくいので、ゆっくり話してください。",
-    faceImageUrl: "/sampleuser1.png",
+    faceImageUrl: "/sampleuser6.png",
     publicPreview:
       "大泉学園町9丁目、80代、女性\n難聴があり聞き取りにくいので、ゆっくり話してください。"
   };
