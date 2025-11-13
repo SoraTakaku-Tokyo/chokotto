@@ -106,6 +106,28 @@ async function main() {
         profileImageUrl: "/sampleuser2.png",
         bio: "歩くのがゆっくりなので、玄関で少しお待たせするかもしれません。",
         centerId: "C001"
+      },
+      {
+        id: "PxWy2f0L2lfmXGYnOmByrB48Sdj1",
+        identityVerified: true,
+        role: "supporter",
+        familyName: "佐々木",
+        firstName: "俊太",
+        familyNameKana: "ササキ",
+        firstNameKana: "シュンタ",
+        birthday: new Date("2002-04-11"),
+        gender: "男性",
+        email: "testuser5@example.com",
+        phoneNumber: "080-7777-7777",
+        postalCode: "176-0006",
+        address1: "栄町2丁目",
+        address2: "88-99",
+        emergencyContactName: "佐々木俊則",
+        emergencyContactPhone: "090-8888-8888",
+        emergencyContactRelationship: "父",
+        profileImageUrl: "/sampleuser7.png",
+        bio: "がんばります！",
+        centerId: "C001"
       }
     ]
   });
