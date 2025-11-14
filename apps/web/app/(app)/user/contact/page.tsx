@@ -59,7 +59,7 @@ export default function UserContactPage() {
             </Link>
           </p>
 
-          <p>月〜金曜　○時〜○時</p>
+          <p>月〜金曜 ○時〜○時</p>
           <p>担当：○○</p>
         </div>
       </div>

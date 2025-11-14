@@ -120,10 +120,6 @@ export default function SignupPhotoPage() {
           className="hidden"
           onChange={onFileChange}
         />
-
-        {/* <p className="text-sm text-gray-500">
-          ※ この段階では端末内に一時保存されます（送信は次の確認画面で行います）
-        </p> */}
       </div>
 
       <StepFooter onNext={onNext} showBack onBack={() => router.push("/supporter-signup")} />

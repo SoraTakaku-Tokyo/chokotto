@@ -73,7 +73,7 @@ export default function JobPage({ params }: { params: { id: string } }) {
           id: String(data.id),
           title: data.title,
           areaLine: data.user?.address1 ?? "",
-          whoLine: `${data.user?.ageGroup ?? ""}　${data.user?.gender ?? ""}`,
+          whoLine: `${data.user?.ageGroup ?? ""} ${data.user?.gender ?? ""}`,
           date: `${dateObj.toLocaleDateString("ja-JP", {
             year: "numeric",
             month: "2-digit",
@@ -128,7 +128,6 @@ export default function JobPage({ params }: { params: { id: string } }) {
 
       // API接続：受注ステータスを "confirmed" に更新
       await updateOrderStatus(Number(job!.id), "confirmed");
-      // await new Promise((r) => setTimeout(r, 300));
 
       setNotice("電話報告を確認しました\n「ホームに戻る」ボタンでお戻りください");
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -149,7 +148,6 @@ export default function JobPage({ params }: { params: { id: string } }) {
 
       // ★API接続：受注ステータスを "completed" に更新
       await updateOrderStatus(Number(job!.id), "completed");
-      // await new Promise((r) => setTimeout(r, 300));
 
       setNotice("完了報告を送信しました");
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -219,7 +217,7 @@ export default function JobPage({ params }: { params: { id: string } }) {
             <div className="text-sm leading-6 text-gray-800">
               <p>
                 {job.areaLine}
-                {job.whoLine ? `　${job.whoLine}` : ""}
+                {job.whoLine ? ` ${job.whoLine}` : ""}
               </p>
               {job.shortNote && <p>{job.shortNote}</p>}
               <div className="mt-2">
@@ -242,7 +240,7 @@ export default function JobPage({ params }: { params: { id: string } }) {
               ) : (
                 <p>
                   {job.areaLine}
-                  {job.whoLine ? `　${job.whoLine}` : ""}
+                  {job.whoLine ? ` ${job.whoLine}` : ""}
                 </p>
               )}
               {job.address && <p>住所：{job.address}</p>}

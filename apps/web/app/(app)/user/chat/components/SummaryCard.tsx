@@ -6,7 +6,7 @@ type Summary = { date: string; time: string; place: string; note: string };
 
 type SummaryCardProps = {
   summary: Summary;
-  onChange: (updated: Summary) => void;
+  onChange: (_updated: Summary) => void;
   onSubmit?: () => void;
   onRetry?: () => void;
   disabled?: boolean;

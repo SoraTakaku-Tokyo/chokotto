@@ -22,63 +22,6 @@ type JobSummary = {
   note?: string;
 };
 
-// type HistoryItem = JobSummary & {
-//   status: "completed" | "decline"; // 完了／辞退
-// };
-
-/* ===== モック（API接続時に置換） ===== */
-// const mockOpen: JobSummary[] = [
-//   {
-//     id: "00001",
-//     title: "買い物代行",
-//     person: "○○区　70代 女性",
-//     date: "2025年9月25日（木）",
-//     timeWindow: "14:00〜16:00 の間で",
-//     duration: "2時間",
-//     destination: "行き先：スーパー○○店",
-//     meetup: "集合場所：自宅"
-//   },
-//   {
-//     id: "00002",
-//     title: "掃除・片付け",
-//     person: "△△区　80代 男性",
-//     date: "2025年9月26日（金）",
-//     timeWindow: "10:00〜12:00 の間で",
-//     duration: "60分",
-//     destination: "場所：居間",
-//     meetup: "集合場所：自宅",
-//     note: "本棚の整理"
-//   }
-// ];
-
-// const mockHistory: HistoryItem[] = [
-//   {
-//     status: "done",
-//     id: "00021",
-//     title: "外出付き添い",
-//     person: "○○1丁目　80代 女性",
-//     remark: "耳がかなり遠いです。",
-//     date: "2025年9月10日（水）",
-//     timeWindow: "13:00〜15:00 の間で",
-//     duration: "2時間",
-//     destination: "外出先：中央総合病院",
-//     meetup: "集合場所：自宅",
-//     note: "ながくて二時間です"
-//   },
-//   {
-//     status: "resigned",
-//     id: "00022",
-//     title: "話し相手",
-//     person: "○○3丁目　80代 男性",
-//     date: "2025年9月3日（水）",
-//     timeWindow: "13:00〜15:00 の間で",
-//     duration: "2時間",
-//     destination: "外出先：中央総合病院",
-//     meetup: "集合場所：自宅",
-//     note: "ながくて二時間です"
-//   }
-// ];
-
 /* ===== ここからページ本体 ===== */
 type TabKey = "open" | "history";
 
@@ -118,7 +61,7 @@ export default function JobsPage() {
           const formatted: JobSummary[] = data.map((req) => ({
             id: String(req.id),
             title: req.title,
-            person: `${req.user.address1}　${req.user.ageGroup}　${req.user.gender ?? ""}`,
+            person: `${req.user.address1} ${req.user.ageGroup} ${req.user.gender ?? ""}`,
             remark: req.user.bio,
             date: formatJapaneseDate(req.scheduledDate),
             timeWindow: `${req.scheduledStartTime ?? ""}〜${req.scheduledEndTime ?? ""}`,
@@ -134,7 +77,7 @@ export default function JobsPage() {
           const formatted: JobSummary[] = data.map((req) => ({
             id: String(req.id),
             title: req.title,
-            person: `${req.user.address1}　${req.user.ageGroup}　${req.user.gender ?? ""}`,
+            person: `${req.user.address1} ${req.user.ageGroup} ${req.user.gender ?? ""}`,
             remark: req.user.bio,
             date: formatJapaneseDate(req.scheduledDate),
             timeWindow: `${req.scheduledStartTime ?? ""}〜${req.scheduledEndTime ?? ""}`,

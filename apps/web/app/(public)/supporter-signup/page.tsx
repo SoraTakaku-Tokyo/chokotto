@@ -236,13 +236,6 @@ export default function SignupBasicPage() {
     router.push("/supporter-signup/photo");
   };
 
-  // const handleCancel = () => {
-  //   if (confirm("登録をやめますか？下書きは削除されます。")) {
-  //     clearDraft();
-  //     router.push("/supporter-login");
-  //   }
-  // };
-
   return (
     <>
       <StepHeader step={2} title="新規登録する" />
@@ -337,7 +330,7 @@ export default function SignupBasicPage() {
                 />
                 女
               </label>
-              {/* <label className="flex items-center gap-2">
+              <label className="flex items-center gap-2">
                 <input
                   type="radio"
                   name="gender"
@@ -346,7 +339,7 @@ export default function SignupBasicPage() {
                   required
                 />
                 回答しない
-              </label> */}
+              </label>
             </div>
           </fieldset>
 
@@ -586,28 +579,7 @@ export default function SignupBasicPage() {
         </div>
       </div>
 
-      <StepFooter
-        onNext={handleNext}
-        // secondary={
-        // <Button
-        //   variant="s_secondary"
-        //   size="lg"
-        //   equalWidth
-        //   onClick={async () => {
-        //     if (confirm("登録をやめますか？下書きは削除されます。")) {
-        //       await signOut(auth); // 👈 ←これがポイント
-        //       clearDraft();
-        //       router.push("/supporter-login");
-        //     }
-        //   }}
-        // >
-        //   やっぱりやめる
-        //   <br />
-        //   （ログアウト）
-        // </Button>
-        // }
-        showBack={false}
-      />
+      <StepFooter onNext={handleNext} showBack={false} />
     </>
   );
 }

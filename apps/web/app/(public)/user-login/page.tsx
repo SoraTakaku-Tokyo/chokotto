@@ -2,7 +2,6 @@
 "use client";
 
 import React, { useEffect, useState, FormEvent } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { useAuth } from "@/lib/auth/authContext";
@@ -78,9 +77,7 @@ export default function UsereLoginPage() {
   return (
     <div className="bg-[var(--public-bg, #f5f7f8)] flex min-h-screen items-center justify-center">
       <div className="w-full max-w-sm rounded-2xl border border-gray-200 bg-white p-6 shadow-lg">
-        <h1 className="mb-6 text-center text-2xl font-extrabold text-gray-800">
-          利用者 ログイン
-        </h1>
+        <h1 className="mb-6 text-center text-2xl font-extrabold text-gray-800">利用者 ログイン</h1>
         <div className="flex items-center justify-center py-10">
           <Image src="/logo.png" alt="ちょこっと" width={240} height={72} priority />
         </div>

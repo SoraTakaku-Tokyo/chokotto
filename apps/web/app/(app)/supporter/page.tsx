@@ -44,7 +44,6 @@ export default function SupporterHome() {
       router.replace("/supporter", { scroll: true });
     }
     // sp は参照が変わることがあるため toString で依存
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sp?.toString(), router]);
 
   const verified = verifyStatus === "verified";

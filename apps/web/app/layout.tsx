@@ -1,5 +1,6 @@
 // apps/web/app/layout.tsx
 import "./globals.css";
+import React from "react";
 import AppShell from "@/components/layout/AppShell";
 import { AuthProvider } from "@/lib/auth/authContext";
 import RouteThemeBodyClass from "./RouteThemeBodyClass";

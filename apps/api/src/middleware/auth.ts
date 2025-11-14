@@ -55,7 +55,7 @@ export async function requireAuth(req: AuthenticatedRequest, res: Response, next
     // DBユーザーを特定（firebase_uidで照合）
     // ----------------------------------------------------
     const dbUser = await prisma.user.findUnique({
-      where: { id: decoded.uid },
+      where: { id: decoded.uid }
     });
 
     if (!dbUser) {
@@ -68,9 +68,9 @@ export async function requireAuth(req: AuthenticatedRequest, res: Response, next
 
     req.user = {
       uid: decoded.uid,
-      role: dbUser.role,
+      role: dbUser.role
     };
-  
+
     next();
   } catch (error) {
     console.error("Token verification failed:", error);

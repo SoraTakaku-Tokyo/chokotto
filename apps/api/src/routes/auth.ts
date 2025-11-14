@@ -15,7 +15,7 @@ router.post("/qr-login", async (req: Request, res: Response) => {
   }
 
   try {
-    // ⭐ ステップ1: トランザクション内でトークンを検証・無効化する
+    // ステップ1: トランザクション内でトークンを検証・無効化する
     const customToken = await prisma.$transaction(async (tx) => {
       const now = new Date();
 
@@ -48,7 +48,7 @@ router.post("/qr-login", async (req: Request, res: Response) => {
       return customToken;
     });
 
-    // ⭐ ステップ2: クライアントにCustom Tokenを返却
+    // ステップ2: クライアントにCustom Tokenを返却
     return res.status(200).json({ customToken });
   } catch (error) {
     console.error("QR Login Error:", error);

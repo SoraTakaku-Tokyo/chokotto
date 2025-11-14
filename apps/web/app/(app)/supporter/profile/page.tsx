@@ -1,6 +1,7 @@
 // S13 apps/web/app/(app)/supporter/profile/page.tsx
 "use client";
 
+import React from "react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
@@ -45,14 +46,6 @@ const MOCK: Profile = {
 
 export default function SupporterProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null);
-
-  // トースト
-  // const [toast, setToast] = useState<string | null>(null);
-  // function onDummyClick() {
-  //   setToast("この機能は準備中です。公開後に編集できます。");
-  //   setTimeout(() => setToast(null), 1800);
-  // }
-
   useEffect(() => {
     // TODO: fetch('/api/supporter/profile').then(setProfile)
     setProfile(MOCK);
@@ -184,15 +177,3 @@ export default function SupporterProfilePage() {
     </main>
   );
 }
-
-// function Toast({ message }: { message: string }) {
-//   return (
-//     <div
-//       role="status"
-//       aria-live="polite"
-//       className="mt-4 w-full max-w-[360px] rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900 shadow-sm"
-//     >
-//       {message}
-//     </div>
-//   );
-// }

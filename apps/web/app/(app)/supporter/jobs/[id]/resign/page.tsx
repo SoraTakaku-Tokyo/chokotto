@@ -57,13 +57,6 @@ export default function ResignConfirmPage({ params }: { params: { id: string } }
       </section>
 
       <div className="flex flex-col items-center gap-3">
-        {/* <button
-          onClick={handleConfirmResign}
-          disabled={submitting || !!notice}
-          className="w-56 rounded-lg bg-orange-300 px-4 py-3 font-medium shadow disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {submitting ? "処理中…" : "この依頼を辞退する"}
-        </button> */}
         <Button
           type="button"
           onClick={handleConfirmResign}
@@ -76,12 +69,6 @@ export default function ResignConfirmPage({ params }: { params: { id: string } }
           この依頼を辞退する
         </Button>
 
-        {/* <Link
-          href={`/supporter/jobs/${jobId}?view=accepted`}
-          className="w-56 rounded bg-amber-700 px-4 py-2 text-center text-sm font-medium text-white shadow hover:opacity-90"
-        >
-          依頼詳細に戻る
-        </Link> */}
         <Button href={detailHref} variant="s_primary" size="lg" equalWidth>
           依頼詳細に戻る
         </Button>

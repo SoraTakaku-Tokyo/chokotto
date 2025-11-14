@@ -17,9 +17,9 @@ router.get("/", requireAuth, async (req: AuthenticatedRequest, res: Response): P
   try {
     const { uid, role } = req.user!;
 
-  // Firebase UID から DBユーザーを取得し、存在チェック
+    // Firebase UID から DBユーザーを取得し、存在チェック
     const appUser = await prisma.user.findUnique({
-      where: { id: uid },
+      where: { id: uid }
     });
 
     if (!appUser) {
@@ -37,7 +37,7 @@ router.get("/", requireAuth, async (req: AuthenticatedRequest, res: Response): P
         NOT: {
           status: { in: ["completed", "canceled", "expired"] }
         },
-        userId: uid,
+        userId: uid
       };
     }
 
@@ -115,7 +115,6 @@ router.get("/", requireAuth, async (req: AuthenticatedRequest, res: Response): P
 
 router.post("/", requireAuth, (async (req: AuthenticatedRequest, res: Response) => {
   try {
-
     const { uid, role } = req.user!;
 
     // Firebase UID から DBユーザーを取得し、存在チェックも
@@ -124,8 +123,8 @@ router.post("/", requireAuth, (async (req: AuthenticatedRequest, res: Response) 
       select: {
         id: true,
         address1: true,
-        centerId: true,
-      },
+        centerId: true
+      }
     });
 
     if (!appUser) {
@@ -188,7 +187,7 @@ router.get("/:requestId", requireAuth, (async (
 
     // Firebase UID から DBユーザーを取得し、存在チェック
     const appUser = await prisma.user.findUnique({
-      where: { id: uid },
+      where: { id: uid }
     });
 
     if (!appUser) {

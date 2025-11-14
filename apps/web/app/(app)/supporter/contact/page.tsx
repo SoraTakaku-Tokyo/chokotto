@@ -31,7 +31,7 @@ export default function SupporterContactPage() {
               999-9999-9999
             </a>
           </p>
-          <p>月〜金曜　〇時〜〇時</p>
+          <p>月〜金曜 〇時〜〇時</p>
           <p>担当：〇〇</p>
         </div>
       </section>

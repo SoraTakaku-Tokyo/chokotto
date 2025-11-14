@@ -1,4 +1,6 @@
 // apps/web/app/(app)/user/layout.tsx
+import React from "react";
+
 export default function UserLayout({ children }: { children: React.ReactNode }) {
   return (
     // 画面全体に背景色を適用（幅いっぱい＆高さ100vh以上）

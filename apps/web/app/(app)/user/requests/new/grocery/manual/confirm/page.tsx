@@ -1,6 +1,7 @@
 // U8 apps/web/app/(app)/user/requests/new/grocery/manual/confirm/page.tsx
 "use client";
 
+import React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
@@ -39,7 +40,6 @@ export default function U8ConfirmRequestPage() {
     if (!draft.date) m.push("date");
     if (!draft.start) m.push("start");
     if (!draft.end) m.push("end");
-    // if (!draft.place) m.push("place");
     return m;
   }, [draft]);
 

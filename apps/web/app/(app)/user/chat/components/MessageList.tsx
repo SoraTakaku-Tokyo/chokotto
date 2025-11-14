@@ -13,7 +13,7 @@ type Message = {
 type MessageListProps = {
   messages: Message[];
   ttsEnabled: boolean;
-  setTtsEnabled: (enabled: boolean) => void;
+  setTtsEnabled: (_enabled: boolean) => void;
 };
 
 export default function MessageList({ messages, ttsEnabled, setTtsEnabled }: MessageListProps) {

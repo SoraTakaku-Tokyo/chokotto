@@ -150,7 +150,7 @@ router.patch("/:requestId", requireAuth, async (req: AuthenticatedRequest, res) 
       // 先に、サポーターIDを取得する
       const supporterId = request.matchedSupporterId;
 
-      // 💡 サポーター未決定の場合でも open に戻せるようにする
+      // サポーター未決定の場合でも open に戻せるようにする
       if (!supporterId) {
         const updatedRequest = await prisma.request.update({
           where: { id: Number(requestId) },

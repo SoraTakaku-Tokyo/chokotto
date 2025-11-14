@@ -34,13 +34,6 @@ export default function U6ShopTextInputPage() {
   const onNext = () => {
     const trimmed = place.trim();
 
-    // 任意項目に変更
-    // if (!trimmed) {
-    //  setError("買い物先を入力してください");
-    //  taRef.current?.focus();
-    //  return;
-    // }
-
     try {
       const raw = sessionStorage.getItem(DRAFT_KEY);
       const prev: GroceryDraft = raw ? JSON.parse(raw) : {};

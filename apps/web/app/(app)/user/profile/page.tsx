@@ -1,6 +1,7 @@
 // U12 apps/web/app/(app)/user/profile/page.tsx
 "use client";
 
+import React from "react";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/Button";
@@ -10,7 +11,7 @@ type UserProfile = {
   mei: string; // 例: "セツコ"
   seiKana?: string;
   meiKana?: string;
-  birth?: string; // 例: "昭和18年5月5日"
+  birth?: string; // 例: "1944年5月5日"
   postal?: string; // 例: "999-9999"
   addr1?: string; // 例: "〇〇県〇〇市〇〇1丁目"
   addr2?: string; // 例: "〇-〇"

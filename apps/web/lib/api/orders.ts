@@ -49,8 +49,8 @@ export async function fetchOrders(): Promise<OrderItem[]> {
       cache: "no-store",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+        Authorization: `Bearer ${token}`
+      }
     });
 
     if (!response.ok) {
@@ -78,8 +78,8 @@ export async function createOrder(requestId: number): Promise<void> {
     const response = await fetch(`${baseUrl}/api/orders/${requestId}`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${token}`,
-      },
+        Authorization: `Bearer ${token}`
+      }
     });
 
     if (!response.ok) {
@@ -101,16 +101,16 @@ export async function updateOrderStatus(requestId: number, updateStatus: string)
   try {
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
     if (!baseUrl) throw new Error("環境変数 NEXT_PUBLIC_API_BASE_URL が設定されていません。");
-    
+
     const token = await getAuthToken();
 
     const response = await fetch(`${baseUrl}/api/orders/${requestId}`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${token}`
       },
-      body: JSON.stringify({ updateStatus }),
+      body: JSON.stringify({ updateStatus })
     });
 
     if (!response.ok) {
@@ -139,9 +139,9 @@ export async function cancelRequest(requestId: string | number): Promise<void> {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${token}`
       },
-      body: JSON.stringify({ updateStatus: "canceled" }),
+      body: JSON.stringify({ updateStatus: "canceled" })
     });
 
     if (!res.ok) {
@@ -171,9 +171,9 @@ export async function requestChangeSupporter(requestId: string | number): Promis
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`, // ✅ 追加
+        Authorization: `Bearer ${token}` // ✅ 追加
       },
-      body: JSON.stringify({ updateStatus: "refusal" }),
+      body: JSON.stringify({ updateStatus: "refusal" })
     });
 
     if (!res.ok) {

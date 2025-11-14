@@ -50,7 +50,7 @@ async function getAuthToken(): Promise<string | null> {
  * GET /api/requests
  * @param role "user" または "supporter"（開発モード時のみ有効）
  */
-export async function fetchRequests(role?: "user" | "supporter"): Promise<RequestItem[]> {
+export async function fetchRequests(): Promise<RequestItem[]> {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -65,8 +65,8 @@ export async function fetchRequests(role?: "user" | "supporter"): Promise<Reques
       cache: "no-store",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+        Authorization: `Bearer ${token}`
+      }
     });
 
     if (!res.ok) throw new Error(`リクエスト失敗: ${res.status} ${res.statusText}`);
@@ -102,13 +102,12 @@ export async function createRequest(formData: {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${token}`
       },
-      body: JSON.stringify(formData),
+      body: JSON.stringify(formData)
     });
 
-    if (!response.ok)
-      throw new Error(`依頼登録失敗: ${response.status} ${response.statusText}`);
+    if (!response.ok) throw new Error(`依頼登録失敗: ${response.status} ${response.statusText}`);
     console.log("依頼登録成功");
   } catch (error) {
     console.error("依頼登録に失敗しました:", error);
@@ -120,9 +119,7 @@ export async function createRequest(formData: {
  * 依頼詳細を取得する関数
  * GET /api/requests/:requestId
  */
-export async function fetchRequestDetail(
-  requestId: number,
-): Promise<RequestItem> {
+export async function fetchRequestDetail(requestId: number): Promise<RequestItem> {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -137,12 +134,11 @@ export async function fetchRequestDetail(
       cache: "no-store",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+        Authorization: `Bearer ${token}`
+      }
     });
 
-    if (!response.ok)
-      throw new Error(`リクエスト失敗: ${response.status} ${response.statusText}`);
+    if (!response.ok) throw new Error(`リクエスト失敗: ${response.status} ${response.statusText}`);
     return await response.json();
   } catch (error) {
     console.error("依頼詳細の取得に失敗しました:", error);
