@@ -210,11 +210,11 @@ router.get("/", requireAuth, async (req: AuthenticatedRequest, res) => {
 
     // サポーターの受注データ取得（対応する依頼情報と利用者情報を含む）
     const orders = await prisma.order.findMany({
-      where: { supporterId: uid },
+      where: {
+        supporterId: uid
+      },
       orderBy: {
-        request: {
-          scheduledDate: "asc"
-        }
+        updatedAt: "desc"
       },
       include: {
         request: {

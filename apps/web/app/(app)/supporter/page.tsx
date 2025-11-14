@@ -179,6 +179,9 @@ export default function SupporterHome() {
             依頼リストを見る
           </Button>
         )}
+        <Button href="/supporter/jobs?tab=history" variant="s_primary" size="lg" equalWidth>
+          引受履歴を見る
+        </Button>
         <Button href="/supporter/profile" variant="s_primary" size="lg" equalWidth>
           登録情報の確認
         </Button>

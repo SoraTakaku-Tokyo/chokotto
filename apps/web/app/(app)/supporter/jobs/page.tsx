@@ -57,8 +57,8 @@ export default function JobsPage() {
 
         if (current === "open") {
           // ★依頼リスト取得
-          const data = await fetchRequests("supporter");
-          const formatted: JobSummary[] = data.map((req) => ({
+          const requests = await fetchRequests();
+          const formatted: JobSummary[] = requests.map((req) => ({
             id: String(req.id),
             title: req.title,
             person: `${req.user.address1} ${req.user.ageGroup} ${req.user.gender ?? ""}`,
@@ -73,8 +73,11 @@ export default function JobsPage() {
           setRequests(formatted);
         } else {
           // ★引受履歴取得
-          const data = await fetchOrders();
-          const formatted: JobSummary[] = data.map((req) => ({
+          const orders = await fetchOrders();
+          const filtered = orders.filter((req) =>
+            ["completed", "decline", "canceled", "refusal"].includes(req.orderStatus)
+          );
+          const formatted: JobSummary[] = filtered.map((req) => ({
             id: String(req.id),
             title: req.title,
             person: `${req.user.address1} ${req.user.ageGroup} ${req.user.gender ?? ""}`,
@@ -84,7 +87,8 @@ export default function JobsPage() {
             duration: req.scheduledDurationMinutes ? `${req.scheduledDurationMinutes}分` : "",
             destination: req.workLocation1,
             meetup: req.workLocation2,
-            note: req.description
+            note: req.description,
+            orderStatus: req.orderStatus
           }));
           setRequests(formatted);
         }
@@ -119,75 +123,87 @@ export default function JobsPage() {
 
       {/* ------- 募集中（S7相当） ------- */}
       {!loading && !error && current === "open" && (
-        <ul className="space-y-4">
-          {requests.map((j) => (
-            <li key={j.id}>
-              <Link
-                href={`/supporter/jobs/${j.id}?view=confirm`}
-                className="block rounded-lg border border-amber-300 bg-white p-4 shadow-sm transition hover:shadow"
-              >
-                <p className="mb-1 text-sm text-gray-500">依頼ID：{j.id}</p>
-                <h2 className="mb-2 text-base font-semibold">{j.title}</h2>
+        <>
+          {/* 0件メッセージ */}
+          {requests.length === 0 && (
+            <p className="py-4 text-center text-gray-500">募集中の依頼はありません</p>
+          )}
 
-                <div className="text-sm leading-6 text-gray-800">
-                  <p>{j.person}</p>
-                  {j.remark && <p>{j.remark}</p>}
-                  <div className="mt-2">
-                    <p>{j.date}</p>
-                    <p>
-                      {j.timeWindow}
-                      <span className="ml-2">{j.duration}</span>
-                    </p>
+          <ul className="space-y-4">
+            {requests.map((j) => (
+              <li key={j.id}>
+                <Link
+                  href={`/supporter/jobs/${j.id}?view=confirm`}
+                  className="block rounded-lg border border-amber-300 bg-white p-4 shadow-sm transition hover:shadow"
+                >
+                  <p className="mb-1 text-sm text-gray-500">依頼ID：{j.id}</p>
+                  <h2 className="mb-2 text-base font-semibold">{j.title}</h2>
+
+                  <div className="text-sm leading-6 text-gray-800">
+                    <p>{j.person}</p>
+                    {j.remark && <p>{j.remark}</p>}
+                    <div className="mt-2">
+                      <p>{j.date}</p>
+                      <p>
+                        {j.timeWindow}
+                        <span className="ml-2">{j.duration}</span>
+                      </p>
+                    </div>
+                    {j.destination && <p className="mt-2">{j.destination}</p>}
+                    {j.meetup && <p>{j.meetup}</p>}
+                    {j.note && <p className="mt-2">{j.note}</p>}
                   </div>
-                  {j.destination && <p className="mt-2">{j.destination}</p>}
-                  {j.meetup && <p>{j.meetup}</p>}
-                  {j.note && <p className="mt-2">{j.note}</p>}
-                </div>
-              </Link>
-            </li>
-          ))}
-        </ul>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
 
       {/* ------- 引受履歴（S12相当） ------- */}
       {!loading && !error && current === "history" && (
-        <ul className="space-y-4">
-          {requests.map((h) => (
-            <li key={h.id} className="rounded-lg border border-gray-200 bg-white p-0 shadow-sm">
-              {/* ステータスバッジ */}
-              <div
-                className={`w-max rounded-b px-3 py-1 text-sm font-medium ${
-                  h.oderStatus === "completed"
-                    ? "border-b border-emerald-200 bg-emerald-50 text-emerald-700"
-                    : "border-b border-rose-200 bg-rose-50 text-rose-700"
-                }`}
-              >
-                {h.oderStatus === "completed" ? "完了" : "辞退"}
-              </div>
-
-              {/* 本体カード */}
-              <div className="p-4">
-                <p className="mb-1 text-sm text-gray-500">依頼ID：{h.id}</p>
-                <h2 className="mb-2 text-base font-semibold">{h.title}</h2>
-
-                <div className="text-sm leading-6 text-gray-800">
-                  <p>{h.person}</p>
-                  {h.remark && <p>{h.remark}</p>}
-                  <div className="mt-2">
-                    <p>{h.date}</p>
-                    <p>
-                      {h.timeWindow}
-                      <span className="ml-2">{h.duration}</span>
-                    </p>
-                  </div>
-                  {h.destination && <p className="mt-2">{h.destination}</p>}
-                  {h.meetup && <p>{h.meetup}</p>}
-                  {h.note && <p className="mt-2">{h.note}</p>}
+        <>
+          {/* 0件メッセージ */}
+          {requests.length === 0 && (
+            <p className="py-4 text-center text-gray-500">引受履歴はありません</p>
+          )}
+          <ul className="space-y-4">
+            {requests.map((h) => (
+              <li key={h.id} className="rounded-lg border border-gray-200 bg-white p-0 shadow-sm">
+                {/* ステータスバッジ */}
+                <div className="w-max rounded-b border-b border-gray-200 bg-gray-50 px-3 py-1 text-sm font-medium text-gray-700">
+                  {{
+                    completed: "完了",
+                    decline: "辞退",
+                    canceled: "キャンセル",
+                    refusal: "キャンセル"
+                  }[h.orderStatus] || null}
                 </div>
-              </div>
-            </li>
-          ))}
-        </ul>
+
+                {/* 本体カード */}
+                <div className="p-4">
+                  <p className="mb-1 text-sm text-gray-500">依頼ID：{h.id}</p>
+                  <h2 className="mb-2 text-base font-semibold">{h.title}</h2>
+
+                  <div className="text-sm leading-6 text-gray-800">
+                    <p>{h.person}</p>
+                    {h.remark && <p>{h.remark}</p>}
+                    <div className="mt-2">
+                      <p>{h.date}</p>
+                      <p>
+                        {h.timeWindow}
+                        <span className="ml-2">{h.duration}</span>
+                      </p>
+                    </div>
+                    {h.destination && <p className="mt-2">{h.destination}</p>}
+                    {h.meetup && <p>{h.meetup}</p>}
+                    {h.note && <p className="mt-2">{h.note}</p>}
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
     </main>
   );

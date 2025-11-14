@@ -6,7 +6,7 @@ import importPlugin from "eslint-plugin-import";
 
 export default [
   {
-    ignores: ["**/.next/**", "node_modules/**", "dist/**"],
+    ignores: ["**/.next/**", "node_modules/**", "dist/**"]
   },
 
   // --- TypeScript 用設定（ここが重要！） ---
@@ -14,10 +14,10 @@ export default [
     files: ["**/*.ts", "**/*.tsx"],
     languageOptions: {
       parser: tseslint.parser,
-      sourceType: "module",
+      sourceType: "module"
     },
     plugins: {
-      "@typescript-eslint": tseslint.plugin,
+      "@typescript-eslint": tseslint.plugin
     },
     rules: {
       "@typescript-eslint/no-unused-vars": [
@@ -25,10 +25,10 @@ export default [
         {
           argsIgnorePattern: "^_",
           varsIgnorePattern: "^_",
-          caughtErrorsIgnorePattern: "^_",
-        },
-      ],
-    },
+          caughtErrorsIgnorePattern: "^_"
+        }
+      ]
+    }
   },
 
   // --- JS & JSX 用設定 ---
@@ -39,17 +39,16 @@ export default [
       ecmaVersion: "latest",
       sourceType: "module",
       parserOptions: {
-        ecmaFeatures: { jsx: true },
+        ecmaFeatures: { jsx: true }
       },
       globals: {
         ...globals.browser,
-        ...globals.node,
-      },
+        ...globals.node
+      }
     },
     rules: {
       ...js.configs.recommended.rules,
-      ...airbnbBase.rules,
-    },
-  },
+      ...airbnbBase.rules
+    }
+  }
 ];
-
