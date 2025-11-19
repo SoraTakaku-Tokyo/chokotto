@@ -68,6 +68,8 @@ model User {
   requests          Request[] @relation("RequestOwner")
   matchedRequests   Request[] @relation("RequestMatchedSupporter")
   orders            Order[]
+  center            Center @relation(fields: [centerId], references: [id])
+  
   // 【追加】AuthTicketとのリレーション
   authTickets       AuthTicket[] // このユーザーに対して発行されたログインチケット
 
@@ -109,7 +111,7 @@ model Request {
 
   // 日付は Postgres の DATE を使用
   scheduledDate             DateTime  @db.Date @map("scheduled_date")
-  // ひとまず "HH:mm" の string で運用
+  // "HH:mm" の string で運用
   scheduledStartTime        String?   @map("scheduled_start_time")
   scheduledEndTime          String?   @map("scheduled_end_time")
   scheduledDurationMinutes  Int?      @map("scheduled_duration_minutes")
@@ -129,7 +131,7 @@ model Request {
   orders            Order[]
 
   // indexes
-  @@index([status, requestedAt])
+  @@index([status, scheduledDate])
   @@index([userId, status])
 
   @@map("requests")
@@ -142,7 +144,7 @@ model Order {
   id            Int       @id @default(autoincrement())
   requestId     Int       @map("request_id")
   supporterId   String    @map("supporter_id")
-  status        OrderStatus
+  status        OrderStatus @default(matched)
   createdAt     DateTime  @default(now())  @db.Timestamptz(6) @map("created_at")
   updatedAt     DateTime  @updatedAt       @db.Timestamptz(6) @map("updated_at")
 
@@ -184,6 +186,9 @@ model Center {
   isActive      Boolean   @map("is_active")
   createdAt     DateTime @default(now()) @db.Timestamptz(6) @map("created_at")
   updatedAt     DateTime @updatedAt      @db.Timestamptz(6) @map("updated_at")
+
+  // relations
+  user User[]
 
   @@map("centers")
   @@index([isActive])
