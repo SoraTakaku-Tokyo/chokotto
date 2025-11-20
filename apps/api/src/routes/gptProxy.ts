@@ -55,8 +55,13 @@ router.post("/", async (req, res) => {
     const parsed = JSON.parse(outputText);
 
     let normalized = null;
+    const API_BASE = process.env.API_BASE_URL;
+    if (!API_BASE) {
+      throw new Error("環境変数 API_BASE_URL が設定されていません");
+    }
+
     if (parsed.time) {
-      const resNorm = await fetch("http://localhost:3001/api/normalize-time", {
+      const resNorm = await fetch(`${API_BASE}/normalize-time`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ timeText: parsed.time })

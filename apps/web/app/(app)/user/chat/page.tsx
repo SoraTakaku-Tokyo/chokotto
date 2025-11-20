@@ -109,9 +109,11 @@ export default function ChatPage() {
   };
 
   // ✅ GPT Proxy呼び出し関数
+  const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL!;
+
   const sendToGptProxy = async (userText: string) => {
     console.log("📤 GPTへ送信:", userText);
-    const res = await fetch("http://localhost:3001/api/gpt-proxy", {
+    const res = await fetch(`${API_BASE}/gpt-proxy`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: userText })
@@ -216,8 +218,9 @@ export default function ChatPage() {
       // TODO: 利用者ログイン実装後に実際のAPI呼び出しに戻す
       // const user = mockUser; // auth.currentUser の代わり
       // const token = await user.getIdToken();
+      // const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
       // const res = await
-      // fetch(`http://localhost:3001/api/requests`, {
+      // fetch(`${API_BASE}/requests`, {
       //   method: "POST",
       //   headers: {
       //     "Content-Type": "application/json",

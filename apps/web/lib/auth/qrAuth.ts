@@ -7,9 +7,10 @@
  */
 
 export async function exchangeQrToken(qrToken: string): Promise<string> {
-  // 💡 修正点: APIのベースURLを環境変数から取得
-  // 環境変数が設定されていない場合に備え、フォールバック値 ('http://localhost:3001') を設定
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+  if (!API_BASE_URL) {
+    throw new Error("環境変数 NEXT_PUBLIC_API_BASE_URL が設定されていません。");
+  }
 
   // バックエンドのルーティング設定に基づいた完全なパスを構築
   const apiEndpoint = `${API_BASE_URL}/api/auth/qr-login`;
