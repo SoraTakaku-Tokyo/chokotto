@@ -183,3 +183,14 @@ git restore apps/api/package.json
 ## API ドキュメント (Swagger UI)
 開発環境では、以下の URL で API ドキュメント（Swagger UI）を確認できます。  
 http://localhost:3001/api/docs
+
+## 📘 API ドキュメント（Swagger / OpenAPI）
+
+このプロジェクトの API 仕様書は OpenAPI 形式（YAML）で定義されています。
+
+OpenAPI ファイル
+apps/api/src/docs/openapi.yaml
+
+### ブラウザで表示（Swagger Editor）
+
+https://editor.swagger.io/?url=https://raw.githubusercontent.com/SoraTakaku-Tokyo/chokotto/main/apps/api/src/docs/openapi.yaml
