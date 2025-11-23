@@ -1,35 +1,33 @@
-import type { Response, NextFunction } from "express";
 import admin from "../lib/firebaseAdmin";
+import { prisma } from "../lib/prisma";
+import type { Response, NextFunction } from "express";
 import type { DecodedIdToken } from "firebase-admin/auth";
 import type { Request as ExpressRequest } from "express";
-import { prisma } from "../lib/prisma";
+
 
 // **********************************************
 // 型定義
 // **********************************************
 
-// Firebaseトークンの基本情報
+// Firebaseトークンの基本情報(uidを必須にして型エラーを回避)
 export interface CustomDecodedIdToken extends DecodedIdToken {
   uid: string;
 }
 
-// 認証後の req.user の型
+// 認証後の req.user の型を作成
 export interface AuthenticatedUser {
   uid: string;
   role: string;
 }
 
-// Express Requestにカスタムユーザープロパティを追加した Request の型エイリアス
-// requests.ts などで明示的にインポートして利用します。
+// req.userプロパティを持てるRequest型を作成
 export interface AuthenticatedRequest extends ExpressRequest {
   user?: AuthenticatedUser;
 }
 
-// Express Requestにカスタムユーザープロパティを追加する型を拡張 (グローバル)
+// Request型へのreq.userプロパティ追加をアプリ全体に反映
 declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
-    // 既存の Request インターフェースに user プロパティを追加
     interface Request {
       user?: AuthenticatedUser;
     }
