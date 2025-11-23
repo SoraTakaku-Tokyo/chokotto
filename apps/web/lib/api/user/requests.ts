@@ -14,7 +14,7 @@ function withBase(baseUrl: string, path: string) {
   return url;
 }
 
-export type RequestListItem= {
+export type RequestListItem = {
   id: number;
   title: string;
   description?: string;
@@ -27,7 +27,7 @@ export type RequestListItem= {
   requestedAt: string;
 };
 
-export type RequestDetailItem= {
+export type RequestDetailItem = {
   id: number;
   title: string;
   description?: string;

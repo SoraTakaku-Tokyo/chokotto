@@ -1,6 +1,6 @@
-// apps/web/lib/api/requests.ts
+// apps/web/lib/api/supporter/requests.ts
 // ==========================================================
-// 依頼関連APIを呼び出してデータを取得・登録する関数
+// サポーター側の依頼関連APIを呼び出してデータを取得・登録する関数
 // ==========================================================
 
 import { getAuth } from "firebase/auth";
@@ -47,10 +47,9 @@ async function getAuthToken(): Promise<string | null> {
 
 /**
  * 依頼一覧を取得する関数
- * GET /api/requests
- * @param role "user" または "supporter"（開発モード時のみ有効）
+ * GET /api/supporter/requests
  */
-export async function fetchRequests(): Promise<RequestItem[]> {
+export async function fetchSupporterRequests(): Promise<RequestItem[]> {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -61,7 +60,7 @@ export async function fetchRequests(): Promise<RequestItem[]> {
     const token = await getAuthToken();
     if (!token) throw new Error("ユーザーがログインしていません。");
 
-    const res = await fetch(withBase(baseUrl, "/api/requests"), {
+    const res = await fetch(withBase(baseUrl, "/api/supporter/requests"), {
       cache: "no-store",
       headers: {
         "Content-Type": "application/json",
@@ -78,48 +77,10 @@ export async function fetchRequests(): Promise<RequestItem[]> {
 }
 
 /**
- * 依頼新規登録を行う関数
- * POST /api/requests
- */
-export async function createRequest(formData: {
-  description?: string;
-  scheduledDate: string;
-  scheduledStartTime: string;
-  scheduledEndTime: string;
-  location1?: string;
-}): Promise<void> {
-  try {
-    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-    if (!baseUrl) {
-      throw new Error("環境変数 NEXT_PUBLIC_API_BASE_URL が設定されていません。");
-    }
-
-    const token = await getAuthToken();
-    if (!token) throw new Error("ユーザーがログインしていません。");
-
-    const response = await fetch(withBase(baseUrl, "/api/requests"), {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify(formData)
-    });
-
-    if (!response.ok) throw new Error(`依頼登録失敗: ${response.status} ${response.statusText}`);
-    console.log("依頼登録成功");
-  } catch (error) {
-    console.error("依頼登録に失敗しました:", error);
-    throw error;
-  }
-}
-
-/**
  * 依頼詳細を取得する関数
- * GET /api/requests/:requestId
+ * GET /api/supporter/requests/:requestId
  */
-export async function fetchRequestDetail(requestId: number): Promise<RequestItem> {
+export async function fetchSupporterRequestDetail(requestId: number): Promise<RequestItem> {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -130,7 +91,7 @@ export async function fetchRequestDetail(requestId: number): Promise<RequestItem
     const token = await getAuthToken();
     if (!token) throw new Error("ユーザーがログインしていません。");
 
-    const response = await fetch(withBase(baseUrl, `/api/requests/${requestId}`), {
+    const response = await fetch(withBase(baseUrl, `/api/supporter/requests/${requestId}`), {
       cache: "no-store",
       headers: {
         "Content-Type": "application/json",

@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
-import { fetchRequestDetail } from "@/lib/api/requests";
+import { fetchSupporterRequestDetail } from "@/lib/api/supporter/requests";
 import { createOrder, updateOrderStatus } from "@/lib/api/orders";
 // import { useParams } from "next/navigation";
 
@@ -62,7 +62,7 @@ export default function JobPage({ params }: { params: { id: string } }) {
       setError(null);
       try {
         // lib/api/requests.ts 経由でAPIを呼び出す
-        const data = await fetchRequestDetail(Number(params.id), "supporter");
+        const data = await fetchSupporterRequestDetail(Number(params.id), "supporter");
 
         const dateObj = new Date(data.scheduledDate);
         const weekDays = ["日", "月", "火", "水", "木", "金", "土"];

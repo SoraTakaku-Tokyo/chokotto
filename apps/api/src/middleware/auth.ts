@@ -4,7 +4,6 @@ import type { Response, NextFunction } from "express";
 import type { DecodedIdToken } from "firebase-admin/auth";
 import type { Request as ExpressRequest } from "express";
 
-
 // **********************************************
 // 型定義
 // **********************************************
@@ -91,7 +90,7 @@ export async function requireAuth(req: AuthenticatedRequest, res: Response, next
       address2: dbUser.address2,
       profileImageUrl: dbUser.profileImageUrl,
       bio: dbUser.bio,
-      centerId:  dbUser.centerId,
+      centerId: dbUser.centerId
     };
 
     next();

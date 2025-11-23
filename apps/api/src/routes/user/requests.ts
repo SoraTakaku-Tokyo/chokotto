@@ -32,7 +32,7 @@ router.get("/", requireAuth, async (req: AuthenticatedRequest, res: Response): P
         status: { in: ["completed", "canceled", "expired"] }
       },
       userId: uid
-    };  
+    };
 
     // 絞り込み条件に一致する依頼を取得
     const requests = await prisma.request.findMany({
@@ -147,17 +147,16 @@ router.get("/:requestId", requireAuth, (async (
     if (matchedSupporterId) {
       const matchedSupporter = await prisma.user.findUnique({
         where: { id: matchedSupporterId },
-          select:
-            {
-              familyName: true,
-              firstName: true,
-              familyNameKana: true,
-              firstNameKana: true,
-              gender: true,
-              phoneNumber: true,
-              profileImageUrl: true,
-              bio: true
-            }
+        select: {
+          familyName: true,
+          firstName: true,
+          familyNameKana: true,
+          firstNameKana: true,
+          gender: true,
+          phoneNumber: true,
+          profileImageUrl: true,
+          bio: true
+        }
       });
 
       // フロント用に整形

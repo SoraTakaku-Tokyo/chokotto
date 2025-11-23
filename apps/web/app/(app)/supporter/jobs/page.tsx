@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { useEffect, useState } from "react";
-import { fetchRequests } from "@/lib/api/requests";
+import { fetchSupporterRequests } from "@/lib/api/supporter/requests";
 import { fetchOrders } from "@/lib/api/orders";
 
 /* ===== 型 ===== */
@@ -57,7 +57,7 @@ export default function JobsPage() {
 
         if (current === "open") {
           // ★依頼リスト取得
-          const requests = await fetchRequests();
+          const requests = await fetchSupporterRequests();
           const formatted: JobSummary[] = requests.map((req) => ({
             id: String(req.id),
             title: req.title,
