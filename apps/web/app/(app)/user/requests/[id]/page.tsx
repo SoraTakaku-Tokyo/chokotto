@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/Button";
-import { fetchRequestDetail } from "@/lib/api/requests";
+import { fetchUserRequestDetail } from "@/lib/api/user/requests";
 import Image from "next/image";
 
 type RequestDetail = {
@@ -46,7 +46,7 @@ export default function UserRequestDetail() {
   useEffect(() => {
     async function load() {
       try {
-        const detail = await fetchRequestDetail(Number(params.id), "user");
+        const detail = await fetchUserRequestDetail(Number(params.id));
         console.log("詳細APIレスポンス:", detail);
         setData(detail);
       } catch (err) {
