@@ -82,7 +82,7 @@ export default function JobPage({ params }: { params: { id: string } }) {
           timeWindow: `${data.scheduledStartTime}〜${data.scheduledEndTime}`,
           longNote: data.description ?? "",
           workLocation1: data.workLocation1 ?? "",
-          duration: "",
+          duration: ""
         };
 
         // ----------------------------------------
@@ -95,32 +95,30 @@ export default function JobPage({ params }: { params: { id: string } }) {
         let isAccepted = false;
 
         if (requestUser.familyName) {
-         isAccepted = true;
+          isAccepted = true;
         }
 
         const jobDetail: JobDetail = {
           ...baseInfo,
 
-        // open 状態
-        meetup: data.workLocation2 ?? "",
-        areaLine: requestUser.address1 ?? "",
-        whoLine: `${requestUser.ageGroup ?? ""} ${requestUser.gender ?? ""}`,
-        shortNote: requestUser.bio ?? "",
+          // open 状態
+          meetup: data.workLocation2 ?? "",
+          areaLine: requestUser.address1 ?? "",
+          whoLine: `${requestUser.ageGroup ?? ""} ${requestUser.gender ?? ""}`,
+          shortNote: requestUser.bio ?? "",
 
-        // 引受済の場合だけ個人情報
-        fullPerson: isAccepted
-          ? `${requestUser.familyName ?? ""} ${requestUser.firstName ?? ""} さん（${requestUser.familyNameKana ?? ""} ${requestUser.firstNameKana ?? ""}）`
-          : undefined,
+          // 引受済の場合だけ個人情報
+          fullPerson: isAccepted
+            ? `${requestUser.familyName ?? ""} ${requestUser.firstName ?? ""} さん（${requestUser.familyNameKana ?? ""} ${requestUser.firstNameKana ?? ""}）`
+            : undefined,
 
-        address: isAccepted
-          ? [requestUser.address1, requestUser.address2].filter(Boolean).join(" ")
-          : undefined,
+          address: isAccepted
+            ? [requestUser.address1, requestUser.address2].filter(Boolean).join(" ")
+            : undefined,
 
-        phoneNumber: isAccepted ? requestUser.phoneNumber ?? "" : undefined,
+          phoneNumber: isAccepted ? (requestUser.phoneNumber ?? "") : undefined,
 
-        userImageUrl: isAccepted
-          ? requestUser.profileImageUrl || "/user.png"
-          : undefined,
+          userImageUrl: isAccepted ? requestUser.profileImageUrl || "/user.png" : undefined
         };
 
         setJob(jobDetail);

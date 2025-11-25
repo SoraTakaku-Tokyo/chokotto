@@ -20,7 +20,7 @@ router.patch("/:requestId", requireAuth, async (req: AuthenticatedRequest, res) 
     const { updateStatus } = req.body;
 
     // requireAuthから受け取ったユーザーID
-    const { uid } = req.user!; 
+    const { uid } = req.user!;
 
     // 対象の request を取得
     const request = await prisma.request.findUnique({
@@ -32,8 +32,8 @@ router.patch("/:requestId", requireAuth, async (req: AuthenticatedRequest, res) 
     }
 
     // 実行者チェック
-    const userOnlyStatuses = ["canceled" , "refusal"];
-    const supporterOnlyStatuses = ["confirmed" , "decline" , "completed"];
+    const userOnlyStatuses = ["canceled", "refusal"];
+    const supporterOnlyStatuses = ["confirmed", "decline", "completed"];
 
     // canceled・refusal：依頼者本人しか実行できない
     if (userOnlyStatuses.includes(updateStatus)) {

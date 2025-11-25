@@ -144,7 +144,8 @@ export default function JobsPage() {
                     {j.remark && <p>{j.remark}</p>}
                     <div className="mt-2">
                       <p>日程：{j.date}</p>
-                      <p>時間：
+                      <p>
+                        時間：
                         {j.timeWindow}
                         <span className="ml-2">{j.duration}</span>
                       </p>
@@ -190,7 +191,8 @@ export default function JobsPage() {
                     {h.remark && <p>{h.remark}</p>}
                     <div className="mt-2">
                       <p>日程：{h.date}</p>
-                      <p>時間：
+                      <p>
+                        時間：
                         {h.timeWindow}
                         <span className="ml-2">{h.duration}</span>
                       </p>
