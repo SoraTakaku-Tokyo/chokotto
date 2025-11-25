@@ -4,62 +4,7 @@ import { requireAuth, AuthenticatedRequest } from "../middleware/auth";
 
 const router = Router();
 
-// POST /api/orders/:id
-//  ★受注新規登録API★
-// 現段階では Firebase 認証は未実装。
-// requestId は URLパラメータから受け取る。
-// userId は auth.ts（requireAuth）から受け取る。
-// 機能：
-// 1. 指定された requestId の依頼を "matched" に更新し、supporterId を設定
-// 2. orders テーブルに新しいレコードを追加
-
-router.post("/:requestId", requireAuth, async (req, res) => {
-  try {
-    // 受け取ったrequestId
-    const { requestId } = req.params;
-
-    // auth.tsからユーザー情報を取得
-    const { uid, role } = req.user!;
-
-    // サポーター以外は拒否
-    if (role !== "supporter") {
-      return res.status(403).json({ error: "サポーターのみ受注可能です" });
-    }
-
-    // 対象の request を取得
-    const request = await prisma.request.findUnique({ where: { id: Number(requestId) } });
-
-    if (!request) {
-      return res.status(404).json({ error: "指定された依頼が見つかりません" });
-    }
-
-    // すでにマッチ済み、キャンセルなどの場合は拒否
-    if (request.status !== "open") {
-      return res.status(400).json({ error: "この依頼は受付終了です" });
-    }
-
-    // トランザクションで一括処理
-    const [updatedRequest, newOrder] = await prisma.$transaction([
-      prisma.request.update({
-        where: { id: Number(requestId) },
-        data: { status: "matched", matchedSupporterId: uid }
-      }),
-      prisma.order.create({
-        data: { requestId: Number(requestId), supporterId: uid, status: "matched" }
-      })
-    ]);
-
-    // 成功レスポンス
-    return res
-      .status(201)
-      .json({ message: "Order created successfully", order: newOrder, updatedRequest });
-  } catch (error) {
-    console.error("Error creating order:", error);
-    return res.status(500).json({ error: "サーバーエラーが発生しました" });
-  }
-});
-
-// PATCH /api/orders/:requestID
+// PATCH /api/orders/:requestId
 //  ★依頼・受注ステータス更新API★
 // requestId をURLから、 更新後ステータスをリクエストボディから受け取る。
 // 機能：
@@ -74,6 +19,9 @@ router.patch("/:requestId", requireAuth, async (req: AuthenticatedRequest, res) 
     // 受け取った更新後ステータス
     const { updateStatus } = req.body;
 
+    // requireAuthから受け取ったユーザーID
+    const { uid } = req.user!; 
+
     // 対象の request を取得
     const request = await prisma.request.findUnique({
       where: { id: Number(requestId) }
@@ -81,6 +29,24 @@ router.patch("/:requestId", requireAuth, async (req: AuthenticatedRequest, res) 
 
     if (!request) {
       return res.status(404).json({ error: "指定された依頼が見つかりません" });
+    }
+
+    // 実行者チェック
+    const userOnlyStatuses = ["canceled" , "refusal"];
+    const supporterOnlyStatuses = ["confirmed" , "decline" , "completed"];
+
+    // canceled・refusal：依頼者本人しか実行できない
+    if (userOnlyStatuses.includes(updateStatus)) {
+      if (uid !== request.userId) {
+        return res.status(403).json({ error: "依頼者本人のみ操作可能です。" });
+      }
+    }
+
+    // confirmed・decline・completed：引き受けたサポーターしか実行できない
+    if (supporterOnlyStatuses.includes(updateStatus)) {
+      if (uid !== request.matchedSupporterId) {
+        return res.status(403).json({ error: "担当サポーターのみ操作可能です。" });
+      }
     }
 
     // 1. confirmed、completed、canceled ⇒ requestsデータとordersデータのステータス更新
@@ -190,83 +156,6 @@ router.patch("/:requestId", requireAuth, async (req: AuthenticatedRequest, res) 
   } catch (error) {
     console.error("Error creating order:", error);
     return res.status(500).json({ error: "サーバーエラーが発生しました" });
-  }
-});
-
-// GET /api/orders
-//  ★引受リスト取得API★
-// 機能：
-// サポーターIDでordersデータにヒットがあったら
-// そのリクエストIDでrequestsを見に行き、一覧出力する
-
-router.get("/", requireAuth, async (req: AuthenticatedRequest, res) => {
-  try {
-    const { uid, role } = req.user!;
-
-    // サポーター以外のアクセスは拒否
-    if (role !== "supporter") {
-      return res.status(403).json({ error: "サポーターのみ閲覧できます" });
-    }
-
-    // サポーターの受注データ取得（対応する依頼情報と利用者情報を含む）
-    const orders = await prisma.order.findMany({
-      where: {
-        supporterId: uid
-      },
-      orderBy: {
-        updatedAt: "desc"
-      },
-      include: {
-        request: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                role: true,
-                birthday: true,
-                gender: true,
-                address1: true,
-                bio: true
-              }
-            }
-          }
-        }
-      }
-    });
-
-    if (!orders || orders.length === 0) {
-      return res.json([]);
-    }
-
-    // 年代を算出する関数
-    const getAgeGroup = (birthday: Date): string => {
-      const age = new Date().getFullYear() - birthday.getFullYear();
-      const decade = Math.floor(age / 10) * 10;
-      return `${decade}代`;
-    };
-
-    // フロントで扱う形式に整形
-    const formatted = orders.map((order) => {
-      const req = order.request;
-      const user = req.user;
-      return {
-        ...req,
-        orderStatus: order.status, // order側のステータス
-        user: {
-          id: user.id,
-          role: user.role,
-          gender: user.gender,
-          address1: user.address1,
-          ageGroup: getAgeGroup(user.birthday),
-          bio: user.bio
-        }
-      };
-    });
-
-    res.json(formatted);
-  } catch (error) {
-    console.error("Error fetching supporter orders:", error);
-    res.status(500).json({ error: "サーバーエラーが発生しました" });
   }
 });
 

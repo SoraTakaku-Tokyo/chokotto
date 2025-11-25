@@ -35,65 +35,6 @@ async function getAuthToken(): Promise<string> {
 }
 
 /**
- * 引受リストを取得する関数
- * GET /api/orders
- */
-export async function fetchOrders(): Promise<OrderItem[]> {
-  try {
-    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-    if (!baseUrl) throw new Error("環境変数 NEXT_PUBLIC_API_BASE_URL が設定されていません。");
-
-    const token = await getAuthToken();
-
-    const response = await fetch(`${baseUrl}/api/orders`, {
-      cache: "no-store",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`リクエスト失敗: ${response.status} ${response.statusText}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error("引受リストの取得に失敗しました:", error);
-    throw error;
-  }
-}
-
-/**
- * 依頼を引き受ける関数
- * POST /api/orders/:requestId
- */
-export async function createOrder(requestId: number): Promise<void> {
-  try {
-    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-    if (!baseUrl) throw new Error("環境変数 NEXT_PUBLIC_API_BASE_URL が設定されていません。");
-
-    const token = await getAuthToken();
-
-    const response = await fetch(`${baseUrl}/api/orders/${requestId}`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`受注登録失敗: ${response.status} ${response.statusText}`);
-    }
-
-    console.log("受注登録成功");
-  } catch (error) {
-    console.error("受注登録に失敗しました:", error);
-    throw error;
-  }
-}
-
-/**
  * ステータスを更新する関数
  * PATCH /api/orders/:requestId
  */
@@ -171,7 +112,7 @@ export async function requestChangeSupporter(requestId: string | number): Promis
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}` // ✅ 追加
+        Authorization: `Bearer ${token}`
       },
       body: JSON.stringify({ updateStatus: "refusal" })
     });
