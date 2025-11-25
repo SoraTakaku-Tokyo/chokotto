@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { useEffect, useState } from "react";
 import { fetchSupporterRequests } from "@/lib/api/supporter/requests";
-import { fetchOrders } from "@/lib/api/orders";
+import { fetchOrders } from "@/lib/api/supporter/orders";
 
 /* ===== 型 ===== */
 type JobSummary = {
@@ -143,15 +143,15 @@ export default function JobsPage() {
                     <p>{j.person}</p>
                     {j.remark && <p>{j.remark}</p>}
                     <div className="mt-2">
-                      <p>{j.date}</p>
-                      <p>
+                      <p>日程：{j.date}</p>
+                      <p>時間：
                         {j.timeWindow}
                         <span className="ml-2">{j.duration}</span>
                       </p>
                     </div>
-                    {j.destination && <p className="mt-2">{j.destination}</p>}
-                    {j.meetup && <p>{j.meetup}</p>}
-                    {j.note && <p className="mt-2">{j.note}</p>}
+                    {j.destination && <p className="mt-2">場所：{j.destination}</p>}
+                    {j.meetup && <p>集合場所：{j.meetup}</p>}
+                    {j.note && <p className="mt-2">メモ：{j.note}</p>}
                   </div>
                 </Link>
               </li>
@@ -189,15 +189,15 @@ export default function JobsPage() {
                     <p>{h.person}</p>
                     {h.remark && <p>{h.remark}</p>}
                     <div className="mt-2">
-                      <p>{h.date}</p>
-                      <p>
+                      <p>日程：{h.date}</p>
+                      <p>時間：
                         {h.timeWindow}
                         <span className="ml-2">{h.duration}</span>
                       </p>
                     </div>
-                    {h.destination && <p className="mt-2">{h.destination}</p>}
-                    {h.meetup && <p>{h.meetup}</p>}
-                    {h.note && <p className="mt-2">{h.note}</p>}
+                    {h.meetup && <p>集合場所：{h.meetup}</p>}
+                    {h.destination && <p>場所：{h.destination}</p>}
+                    {h.note && <p>メモ：{h.note}</p>}
                   </div>
                 </div>
               </li>
