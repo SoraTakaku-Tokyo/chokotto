@@ -5,7 +5,7 @@ import React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
-import { createRequest } from "@/lib/api/requests"; // ★ 追加
+import { createRequest } from "@/lib/api/user/requests";
 
 type GroceryDraft = {
   date?: string; // YYYY-MM-DD

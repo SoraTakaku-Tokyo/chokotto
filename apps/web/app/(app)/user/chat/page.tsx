@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import MessageList from "./components/MessageList";
 import VoiceButton from "./components/VoiceButton";
 import SummaryCard from "./components/SummaryCard";
-import { createRequest } from "@/lib/api/requests";
+import { createRequest } from "@/lib/api/user/requests";
 import { Button } from "@/components/ui/Button";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 // import { auth } from "@/lib/firebase"; // NOTE: ログイン機能実装時に使用

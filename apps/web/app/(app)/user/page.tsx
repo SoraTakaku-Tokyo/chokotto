@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { useEffect, useState } from "react";
-import { fetchRequests } from "@/lib/api/requests";
+import { fetchUserRequests } from "@/lib/api/user/requests";
 import { usePathname, useSearchParams } from "next/navigation";
 import Image from "next/image";
 
@@ -31,7 +31,7 @@ export default function UserHome() {
   useEffect(() => {
     async function load() {
       try {
-        const list = await fetchRequests("user");
+        const list = await fetchUserRequests();
         // 進行中（＝一覧カードに出す対象）だけ抽出
         const active = (list as RequestItem[]).filter((r) =>
           ["open", "matched", "confirmed"].includes(r.status)

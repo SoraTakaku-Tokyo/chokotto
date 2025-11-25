@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/Button";
-import { fetchOrders } from "@/lib/api/orders";
+import { fetchOrders } from "@/lib/api/supporter/orders";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 

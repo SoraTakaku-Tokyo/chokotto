@@ -4,7 +4,6 @@ import type { Response, NextFunction } from "express";
 import type { DecodedIdToken } from "firebase-admin/auth";
 import type { Request as ExpressRequest } from "express";
 
-
 // **********************************************
 // 型定義
 // **********************************************
@@ -18,6 +17,18 @@ export interface CustomDecodedIdToken extends DecodedIdToken {
 export interface AuthenticatedUser {
   uid: string;
   role: string;
+  identityVerified: boolean;
+  familyName: string;
+  firstName: string;
+  familyNameKana: string;
+  firstNameKana: string;
+  gender: string;
+  birthday: Date;
+  phoneNumber: string;
+  address1: string;
+  address2: string;
+  profileImageUrl: string | null;
+  bio: string | null;
 }
 
 // req.userプロパティを持てるRequest型を作成
@@ -57,7 +68,7 @@ export async function requireAuth(req: AuthenticatedRequest, res: Response, next
     });
 
     if (!dbUser) {
-      return res.status(404).json({ error: "User not found in DB" });
+      return res.status(404).json({ error: "ユーザー登録が見つかりません。" });
     }
 
     // ----------------------------------------------------
@@ -66,7 +77,20 @@ export async function requireAuth(req: AuthenticatedRequest, res: Response, next
 
     req.user = {
       uid: decoded.uid,
-      role: dbUser.role
+      role: dbUser.role,
+      identityVerified: dbUser.identityVerified,
+      familyName: dbUser.familyName,
+      firstName: dbUser.firstName,
+      familyNameKana: dbUser.familyNameKana,
+      firstNameKana: dbUser.firstNameKana,
+      gender: dbUser.gender,
+      birthday: dbUser.birthday,
+      phoneNumber: dbUser.phoneNumber,
+      address1: dbUser.address1,
+      address2: dbUser.address2,
+      profileImageUrl: dbUser.profileImageUrl,
+      bio: dbUser.bio,
+      centerId: dbUser.centerId
     };
 
     next();

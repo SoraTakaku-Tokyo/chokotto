@@ -6,8 +6,10 @@ import RedisStore from "rate-limit-redis";
 import { createClient } from "redis";
 import pinoHttp from "pino-http";
 import authRouter from "./routes/auth";
-import requestsRouter from "./routes/requests";
+import requestsUserRouter from "./routes/user/requests";
+import requestsSupporterRouter from "./routes/supporter/requests";
 import ordersRouter from "./routes/orders";
+import ordersSupporterRouter from "./routes/supporter/orders";
 import normalizeTimeRouter from "./routes/normalizeTime";
 import gptProxyRouter from "./routes/gptProxy";
 import { setupSwagger } from "./swagger.js";
@@ -51,8 +53,10 @@ app.get("/healthz", (_req, res) => res.status(200).send("ok"));
 // ルーティング
 // 認証ルートを追加
 app.use("/api/auth", authRouter);
-app.use("/api/requests", requestsRouter);
+app.use("/api/user/requests", requestsUserRouter);
+app.use("/api/supporter/requests", requestsSupporterRouter);
 app.use("/api/orders", ordersRouter);
+app.use("/api/supporter/orders", ordersSupporterRouter);
 app.use("/api/gpt-proxy", gptProxyRouter);
 app.use("/api/normalize-time", normalizeTimeRouter);
 

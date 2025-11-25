@@ -5,20 +5,20 @@ import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
-import { fetchRequestDetail } from "@/lib/api/requests";
-import { createOrder, updateOrderStatus } from "@/lib/api/orders";
+import { fetchSupporterRequestDetail } from "@/lib/api/supporter/requests";
+import { createOrder } from "@/lib/api/supporter/orders";
+import { updateOrderStatus } from "@/lib/api/orders";
 // import { useParams } from "next/navigation";
 
 type JobDetail = {
   id: string;
   title: string;
-  areaLine: string;
-  whoLine?: string;
   date: string;
   timeWindow: string;
   duration: string;
-  placeLine?: string;
   meetup?: string;
+  areaLine: string;
+  whoLine?: string;
   shortNote?: string;
   fullPerson?: string;
   address?: string;
@@ -61,35 +61,64 @@ export default function JobPage({ params }: { params: { id: string } }) {
       setLoading(true);
       setError(null);
       try {
-        // lib/api/requests.ts 経由でAPIを呼び出す
-        const data = await fetchRequestDetail(Number(params.id), "supporter");
+        // lib/api/supporter/requests.ts 経由でAPIを呼び出す
+        const data = await fetchSupporterRequestDetail(Number(params.id));
 
         const dateObj = new Date(data.scheduledDate);
         const weekDays = ["日", "月", "火", "水", "木", "金", "土"];
         const week = weekDays[dateObj.getDay()];
 
-        // Prismaの構造に合わせて整形
-        const jobDetail: JobDetail = {
+        // ----------------------------------------
+        // ★ 依頼情報（フロントで常に使う部分）
+        // ----------------------------------------
+        const baseInfo = {
           id: String(data.id),
           title: data.title,
-          areaLine: data.user?.address1 ?? "",
-          whoLine: `${data.user?.ageGroup ?? ""} ${data.user?.gender ?? ""}`,
           date: `${dateObj.toLocaleDateString("ja-JP", {
             year: "numeric",
             month: "2-digit",
             day: "2-digit"
           })}(${week})`,
           timeWindow: `${data.scheduledStartTime}〜${data.scheduledEndTime}`,
-          duration: "",
-          shortNote: data.user?.bio ?? "",
-          fullPerson: `${data.user?.familyName ?? ""} ${data.user?.firstName ?? ""} さん（${
-            data.user?.familyNameKana ?? ""
-          } ${data.user?.firstNameKana ?? ""}）`,
-          address: [data.user?.address1, data.user?.address2].filter(Boolean).join(" "),
-          phoneNumber: data.user?.phoneNumber ?? "",
-          userImageUrl: data.user?.profileImageUrl || "/user.png",
           longNote: data.description ?? "",
-          workLocation1: data.workLocation1 ?? ""
+          workLocation1: data.workLocation1 ?? "",
+          duration: ""
+        };
+
+        // ----------------------------------------
+        // ★ 利用者情報（open / 引受済 で出し分け）
+        //   - data.user：サーバーの整形済み user 情報
+        // ----------------------------------------
+        const requestUser = data.user ?? {};
+
+        // 名前情報が送られてきている ⇒ 自分が引き受けている
+        let isAccepted = false;
+
+        if (requestUser.familyName) {
+          isAccepted = true;
+        }
+
+        const jobDetail: JobDetail = {
+          ...baseInfo,
+
+          // open 状態
+          meetup: data.workLocation2 ?? "",
+          areaLine: requestUser.address1 ?? "",
+          whoLine: `${requestUser.ageGroup ?? ""} ${requestUser.gender ?? ""}`,
+          shortNote: requestUser.bio ?? "",
+
+          // 引受済の場合だけ個人情報
+          fullPerson: isAccepted
+            ? `${requestUser.familyName ?? ""} ${requestUser.firstName ?? ""} さん（${requestUser.familyNameKana ?? ""} ${requestUser.firstNameKana ?? ""}）`
+            : undefined,
+
+          address: isAccepted
+            ? [requestUser.address1, requestUser.address2].filter(Boolean).join(" ")
+            : undefined,
+
+          phoneNumber: isAccepted ? (requestUser.phoneNumber ?? "") : undefined,
+
+          userImageUrl: isAccepted ? requestUser.profileImageUrl || "/user.png" : undefined
         };
 
         setJob(jobDetail);
@@ -102,7 +131,7 @@ export default function JobPage({ params }: { params: { id: string } }) {
     }
 
     fetchJob();
-  }, [params.id]);
+  }, [params.id, view]);
 
   // S8: 引き受ける
   async function handleAccept() {
@@ -227,8 +256,9 @@ export default function JobPage({ params }: { params: { id: string } }) {
                   <span className="ml-2">{job.duration}</span>
                 </p>
               </div>
-              {job.placeLine && <p className="mt-2">{job.placeLine}</p>}
-              {job.meetup && <p>{job.meetup}</p>}
+              {job.meetup && <p>集合場所：{job.meetup}</p>}
+              {job.workLocation1 && <p>場所：{job.workLocation1}</p>}
+              {job.longNote && <p className="mt-2">メモ：{job.longNote}</p>}
             </div>
           )}
 
@@ -264,10 +294,9 @@ export default function JobPage({ params }: { params: { id: string } }) {
                   <span className="ml-2">{job.duration}</span>
                 </p>
               </div>
-              {job.placeLine && <p className="mt-2">{job.placeLine}</p>}
-              {job.meetup && <p>{job.meetup}</p>}
-              {job.workLocation1 && <p>買い物先：{job.workLocation1}</p>}
-              {job.longNote && <p className="mt-2">{job.longNote}</p>}
+              {job.meetup && <p>集合場所：{job.meetup}</p>}
+              {job.workLocation1 && <p>場所：{job.workLocation1}</p>}
+              {job.longNote && <p className="mt-2">メモ：{job.longNote}</p>}
             </div>
           )}
         </section>
