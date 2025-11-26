@@ -1,197 +1,158 @@
-## 目的
+# ご近所サポート　ちょこっと
+高齢者×ボランティアのマッチング支援アプリ(卒業制作)
+
+## アプリ概要
+高齢者が日常生活でのちょっとした困りごとを気軽に依頼できる “地域支援マッチングアプリ” です。
+
+- 依頼者（高齢者）がスマホから簡単に依頼を作成  
+- サポーター（ボランティア）は依頼一覧を確認し、引き受け可能
+- 引き受け後は “マッチング成立” として依頼が進行
+- 運営センター（社会福祉協議会などを想定）は依頼者の新規登録や全体状況の管理が可能
+- 音声入力、大きめのボタン、シンプルなUI など、高齢者に優しいデザイン
+- QRコードログイン（途中まで対応）。現状は依頼者もメール＋パスワードでログイン
+
+## チーム構成（4名）
+
+１）フロントエンド担当（Next.js / UI）  
+２）音声入力担当（Web Speech API / OpenAI API）  
+３）認証・QRログイン担当（Firebase Authentication）  
+４）私：バックエンド担当（API / DB）  
+
+## 私の担当範囲
+
+バックエンド（API / DB）を担当し、API 実装・DB設計、依頼〜引受フローの業務ロジック、ロール別APIの整理などを担当しました。
+
+- Express + TypeScript による API 開発
+- Prisma / PostgreSQL を用いた DB スキーマ設計
+- ロールによって異なる 利用者用 / サポーター用APIの分割実装
+- Firebase Authenticationで認証されたユーザー情報をAPI側で扱うための連携
+  - Firebase ID Token の検証（verifyIdToken）
+  - UIDとDBのUserレコードの紐づけ
+  - ロールに基づくアクセス制御（RBAC）
+- 依頼の作成 / 取得 / 更新API
+- Swagger（OpenAPI）定義とAPIドキュメント整理
+
+## システムアーキテクチャ
+Next.js（フロントエンド）  
+      ↓ （Firebase Auth）  
+Express（TypeScript API）  
+      ↓ （Prisma ORM）  
+PostgreSQL（データベース）
+
+フロントはFirebase SDKでログイン  
+APIはFirebase Admin SDKでID Tokenを検証し、認証済みユーザーとして処理  
+PrismaによりDBモデルとAPIの実装を統合  
+Docker Composeによって Web / API / DB を一括管理
+
+## DB スキーマ（主要テーブル）
+| テーブル |	役割 |
+|---------|-------|
+| User | 依頼者 / サポーター。Firebase UIDを保持する設計（現時点ではテスト用UIDをseedして利用）|
+| Request | 依頼内容（依頼種別・日時・場所・メモなど）|
+| Order | サポーターが依頼を引き受けた際に生成されるレコード |
+| Center | 運営センター向けの拡張用テーブル（現時点では未実装） |
+| AuthTicket | QRログイン用の一時チケット（認証担当が作成）|
+
+## DB スキーマ（ER 図）
+![ER図](./database_design.png)
+
+## 認証・認可
+### 認証（Authentication）
+
+フロント側でFirebase Authenticationによりログイン  
+API側ではFirebase Admin SDKのverifyIdToken() を用いてID Tokenを検証
+UIDをもとにDBのUserレコードを取得
+
+### 認可（Authorization）
+
+APIではroleに基づいてアクセス制御を行います。
+
+- user（依頼者） → 自分の依頼のみ作成/閲覧/更新
+- supporter（サポーター） → 依頼一覧の閲覧 / 引受が可能
+- center（運営） → 依頼者の新規登録、全体状況の管理
+
+ロールによる分岐が増えたため、利用者用APIとサポーター用APIを分割するリファクタリングを実施しました。
+
+## 技術スタック
+### バックエンド
+- Express.js（TypeScript）
+- Prisma / PostgreSQL
+- Firebase Admin SDK（認証連携）
+- Swagger（OpenAPI 3）
+- Zod (入力バリデーション)
+- Docker Compose
+
+### フロントエンド
+- Next.js（App Router）
+- React / React Query
+- Tailwind CSS
+
+### その他
+- OpenAI API（音声担当が利用）
+
+## ローカル開発（起動方法）
+### 依存関係のインストール
+pnpm install -r
+
+### 環境変数ファイルの準備
+cp .env.example .env.dev  
+cp apps/web/.env.example apps/web/.env.local
+### Firebase API キー等を記入
+
+### Docker 起動
+docker compose up --build
 
-- Docker Compose で Web（Next.js）・API（Express + Prisma）・Worker（BullMQ）・Postgres・Redis・Mailpit・Nginx を一括起動します。
-- **MVP用・ローカル開発環境** です。
+### DB マイグレーション & 初期データ
+docker compose exec api pnpm prisma migrate deploy  
+docker compose exec api pnpm prisma db seed
 
-## 前提ツール（ローカルにインストール）
+## API ドキュメント（Swagger UI）
+このプロジェクトのAPI仕様書はOpenAPI形式（YAML）で定義されています。
 
-- Node.js 24 LTS
-- pnpm
-- Docker Desktop（Compose 付き）
-- Git
-- VS Code（推奨拡張：ESLint / Prettier / Tailwind CSS IntelliSense）
-- ngrok（任意：スマホ実機確認用）
-
-### Windows の注意（重要）
-
-- **必ず WSL2 (Ubuntu) 側にリポジトリをクローン**してください。  
-  `C:` 配下に置くとファイル監視が不安定・低速になります。
-
-## セットアップ手順
-
-### 1) リポジトリ取得
-
-`git clone <your-repo>`
-`cd <your-repo>`
-
-### 2) 環境変数ファイルを作成
-
-`cp .env.example .env.dev`
-`cp apps/web/.env.example apps/web/.env.local`
-
-#### Firebase の API キー等を .env.devとapps/web/.env.local に記入
-
-#### .env.dev 末尾の OPENAI_API_KEY=sk-XXXXXXX にキーを記入
-
-### 3) 依存導入
-
-`pnpm install -r`
-
-### 4) サービス起動（初回はビルドあり）
-
-`docker compose up --build`
-
-#### もしエラーが発生して再ビルドが必要な場合…
-
-`docker compose down -v`
-`docker compose up --build`
-
-### 5) もしデータが無かったらデータ作成
-
-　マイグレーション
-　`docker compose exec api pnpm prisma migrate deploy`
-　シーディング
-　`docker compose exec api pnpm prisma db seed`
-
-### 6) Playwright のブラウザをインストール ※e2eテストの前にインストールしてください。
-
-`pnpm -F ./apps/web exec playwright install --with-deps`
-
-## アクセス確認
-
-コマンドでバックエンド接続確認
-`curl http://localhost:3001/healthz` => ok
-
-```
-~~curl -X POST http://localhost:3001/api/tasks \~~
- ~~-H "Content-Type: application/json" \`~~
- ~~-d '{"title":"hello","detail":"first"}'~~
-~~=> レコードが作成される（何回か試すとidが増えていく）~~
-
-~~curl http://localhost:3001/api/tasks~~
-~~=> 作成した分のレコード取得~~
-```
-
-フロントエンド接続
-Nginx 経由の動作確認（/ → web, /api → api）
-`curl http://localhost/api/healthz` => ok
-
-- `pnpm lint` が正常に実行される
-- `pnpm format:check` が正常に実行される
-- `pnpm test` 実行で ✓ 1 passed が出る
-
-※E2Eテストの時に使用。それまではインストール不要です。
-`
-
-`cd apps/web && pnpm test:e2e` 実行で Playwright のテストが成功する
-
-### ブラウザで「localhost」だけで実行すると画像の画面が表示される
-
-### QRログイン（開発用モック）
-
-サンプル URL: http://localhost:3000/qr?c=TEST
-
-### ホットリロードが効かないとき
-
-Windows/macOS で稀に変更検知が不安定な場合、.env.dev に以下を追記してください（CPU 使用率が増えることがあります）。
-
-CHOKIDAR_USEPOLLING=true
-WATCHPACK_POLLING=true
-
-WSL2（Ubuntu）側に置いていれば通常は不要です。
-
-### よくあるトラブルと対処
-
-- Prisma migrate を忘れた
-  → docker compose exec -T api pnpm prisma migrate dev --name init を一度実行
-
-- ポート競合（3000/3001/8025/5432/6379）
-  → 他アプリを停止、または docker-compose.yml のポートを変更
-
-- Windows で遅い/不安定
-  → WSL2 側へクローンし直す（/home/<user>/repo など）
-
-- CI (Verify lockfile is in sync) が失敗した場合
-  → PR のチェックで `pnpm -w install --frozen-lockfile` が失敗する場合は、依存追加に対して `pnpm-lock.yaml` が更新されていないことが原因です。
-
-以下を実行して lockfile を最新化してから再コミットしてください。
-
-```bash
-pnpm -w install --lockfile-only
-pnpm dlx prettier pnpm-lock.yaml --write　// Prettierの整形に合わせる
-git add pnpm-lock.yaml
-git commit -m "chore: sync lockfile"
-git push
-```
-
-- Prisma seed で ts-node が見つからない場合
-
-```エラーメッセージ例：
-Error: Command failed with ENOENT: ts-node prisma/seed.ts
-```
-
-→ 下記を実行してください
-💡この対応は 1回だけでOK。
-コンテナを再構築（docker compose down -v や --no-cache）した場合のみ再実行してください。
-
-```
-docker compose exec api pnpm add -D ts-node typescript --no-lockfile
-docker compose exec api npx prisma db seed
-```
-
-また、この操作で apps/api/package.json が modified 状態になりますが、
-コミットせずに以下で元に戻してください：
-
-```
-git restore apps/api/package.json
-```
-
-- 音声入力画面でダミーの依頼票が作成されない
-  → 変にキャッシュが残っていると、CSSが働かないこともあります。
-  `rm -rf apps/web/.next`でキャッシュを削除してから、dockerを再起動してください。
-
-### 便利コマンド（package.json 経由）
-
-#### 起動（= docker compose up --build）
-
-`pnpm dev`
-
-#### 停止とボリューム削除
-
-`pnpm down`
-
-#### ログ追従
-
-`pnpm logs`
-
-### ディレクトリ構成
-
-```bash
-.
-├── apps
-│ ├── api # Express + Prisma
-│ ├── web # Next.js + Tailwind
-│ └── worker # BullMQ
-├── infra/nginx # 開発用 Nginx 設定
-├── docker-compose.yml
-├── .env.example
-├── package.json
-├── pnpm-workspace.yaml
-└── tsconfig.base.json
-```
-
-## API ドキュメント (Swagger UI)
-
-開発環境では、以下の URL で API ドキュメント（Swagger UI）を確認できます。  
-http://localhost:3001/api/docs
-
-## 📘 API ドキュメント（Swagger / OpenAPI）
-
-このプロジェクトの API 仕様書は OpenAPI 形式（YAML）で定義されています。
-
-OpenAPI ファイル
+OpenAPIファイル
 apps/api/src/docs/openapi.yaml
 
 ### ブラウザで表示（Swagger Editor）
 
 https://editor.swagger.io/?url=https://raw.githubusercontent.com/SoraTakaku-Tokyo/chokotto/main/apps/api/src/docs/openapi.yaml
+
+## 依頼のステータス遷移
+依頼は以下の流れで進行します。
+
+open（未引受）  
+   ↓ サポーターが引受  
+matched（引受済）  
+   ↓ 電話確認  
+confirmed（対応中）  
+   ↓ 作業完了  
+completed（完了）
+
+■ 例外的な遷移（キャンセル・辞退・交代・期限切れ）
+
+業務の性質上、例外パターンも複数存在します。
+
+利用者からのキャンセル（canceled）  
+サポーターによる辞退 → open に戻る（decline）  
+利用者からのサポーター交代要請 → open に戻る（refusal）  
+期限切れ（expired）未実装
+
+※ 引き受け後の例外ステータスはOrderテーブルに記録され、依頼テーブルは必要に応じてopen（未引受）へ戻ります。
+
+## 今後改善したい点
+
+- バリデーションの強化（Zodでの厳格化）
+- サポーター新規登録APIの実装（現在モック）
+- 期限切れ依頼の自動処理（Cron + Worker化）
+- 引き受け後に「辞退」「サポーター交代要請」が発生した場合に、当事者に通知が届く仕組み（トップ画面でわかるように表示）
+
+## 画面イメージ
+
+### 依頼者画面
+![ログイン後トップ画面](.README-images/user-top/png)  
+![依頼作成画面](.README-images/request-create/png)  
+![依頼音声入力画面](.README-images/request-create-chat/png)
+### サポーター画面
+![ログイン後トップ画面](.README-images/supporter-top/png)  
+![依頼一覧](.README-images/request-list/png)  
+![依頼詳細](.README-images/request-detail/png)
+
