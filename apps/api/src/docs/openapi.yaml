@@ -140,38 +140,40 @@ paths:
         "400":
           description: 入力エラー
 
-  /requests:
+   /user/requests:
     get:
       tags:
+        - User
         - Requests
-      summary: 依頼リストを取得
+      summary: 利用者の依頼一覧を取得
       description: >
-        Firebase 認証により、トークン内の `role` と `userId` を元に取得対象を自動判定します。  
-        - role = "user": 自分の依頼（未完了・未キャンセル）  
-        - role = "supporter": open の依頼（辞退・交代希望を除外）
+        ログイン中の利用者が作成した依頼のうち、  
+        status が completed / canceled / expired 以外の依頼を返します。
       security:
         - bearerAuth: []
       responses:
         "200":
-          description: 依頼一覧の取得に成功
+          description: 依頼一覧取得成功
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: "#/components/schemas/Request"
-        "401":
-          description: 認証エラー
+        "403":
+          description: 利用者(role=user) 以外は禁止
         "500":
-          description: サーバー内部エラー
+          description: サーバーエラー
 
     post:
       tags:
+        - User
         - Requests
       summary: 新規依頼を登録
       description: >
-        Firebase 認証済みユーザーが新しい依頼を登録します。  
-        リクエストは Zod スキーマ `RequestCreateSchema` によって検証されます。
+        ログイン中の利用者が新しい依頼を登録します。  
+        バリデーションは Zod スキーマ `RequestCreateSchema` によって行われます。  
+        title は固定で「買い物代行」が設定されます。
       security:
         - bearerAuth: []
       requestBody:
@@ -210,24 +212,21 @@ paths:
               schema:
                 $ref: "#/components/schemas/Request"
         "400":
-          description: バリデーションエラー
-        "401":
-          description: 未認証
-        "404":
-          description: ユーザーが存在しない
+          description: Zod バリデーションエラー
+        "403":
+          description: 利用者(role=user) 以外は禁止
         "500":
-          description: サーバー内部エラー
+          description: サーバーエラー
 
-  /requests/{requestId}:
+  /user/requests/{requestId}:
     get:
       tags:
+        - User
         - Requests
-      summary: 依頼詳細を取得
+      summary: 依頼詳細を取得（利用者向け）
       description: >
-        Firebase 認証済みユーザーの `role` に応じて、  
-        利用者またはサポーターの詳細情報を含む依頼内容を返します。  
-        - supporter: 依頼者情報を含む  
-        - user: サポーター情報を含む
+        ログイン中の利用者が自分の依頼の詳細を取得します。  
+        matchedSupporterId がある場合は、サポーター情報も返します。
       security:
         - bearerAuth: []
       parameters:
@@ -236,28 +235,93 @@ paths:
           required: true
           schema:
             type: integer
-            example: 123
+            example: 12
       responses:
         "200":
           description: 依頼詳細取得成功
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/RequestDetail"
+                $ref: "#/components/schemas/RequestDetailUser"
         "400":
           description: 無効な requestId
+        "403":
+          description: 自分の依頼以外は禁止
         "404":
           description: 該当依頼が存在しない
         "500":
-          description: サーバー内部エラー
+          description: サーバーエラー
 
-  /orders:
+  /supporter/requests:
     get:
       tags:
-        - Orders
-      summary: サポーターの引受一覧を取得
+        - Supporter
+        - Requests
+      summary: サポーター向け依頼一覧を取得
       description: >
-        ログイン中のサポーターが引き受けた依頼一覧を取得します。
+        ログイン中のサポーターが確認できる「open」の依頼一覧を返します。  
+        ただし、そのサポーターが decline/refusal した依頼は除外されます。
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 依頼一覧取得成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SupporterRequest"
+        "403":
+          description: サポーター(role=supporter) 以外は禁止
+        "500":
+          description: サーバーエラー
+
+  /supporter/requests/{requestId}:
+    get:
+      tags:
+        - Supporter
+        - Requests
+      summary: 依頼詳細を取得（サポーター向け）
+      description: >
+        依頼の詳細情報を返します。  
+        - status=open の場合：利用者情報は簡易表示  
+        - 自分が matched した依頼：利用者の詳細情報を返す  
+        - 他のサポーターが matched：利用者情報は簡易表示
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: requestId
+          required: true
+          schema:
+            type: integer
+            example: 12
+      responses:
+        "200":
+          description: 依頼詳細取得成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SupporterRequestDetail"
+        "400":
+          description: 無効な requestId
+        "403":
+          description: サポーターのみアクセス可能
+        "404":
+          description: 該当依頼が存在しない
+        "500":
+          description: サーバーエラー
+
+  /supporter/orders:
+    get:
+      tags:
+        - Supporter
+        - Orders
+      summary: サポーターが受注した依頼一覧を取得
+      description: >
+        ログイン中のサポーター自身が引き受けた依頼一覧を返します。  
+        Request と User（依頼者情報）を含みます。
       security:
         - bearerAuth: []
       responses:
@@ -268,21 +332,24 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/OrderSummary"
+                  $ref: "#/components/schemas/SupporterOrderSummary"
         "403":
           description: サポーター以外禁止
-        "404":
-          description: データなし
         "500":
           description: サーバーエラー
 
-  /orders/{requestId}:
+  /supporter/orders/{requestId}:
     post:
       tags:
+        - Supporter
         - Orders
       summary: 依頼を受注する
       description: >
-        指定した requestId の依頼を "matched" に更新し、order を作成します。
+        指定した requestId の依頼を "matched" に更新し、  
+        supporterId を設定した Order を作成します。  
+        依頼の status が open の場合のみ受注可能です。
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: requestId
@@ -296,12 +363,9 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                  order:
-                    $ref: "#/components/schemas/Order"
+                $ref: "#/components/schemas/SupporterOrderCreated"
+        "400":
+          description: 依頼が open ではない
         "403":
           description: サポーターのみ許可
         "404":
@@ -309,32 +373,102 @@ paths:
         "500":
           description: サーバーエラー
 
-components:
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
+  /orders/{requestId}:
+    patch:
+      tags:
+        - Orders
+      summary: 依頼のステータスを更新する
+      description: >
+        指定された requestId の依頼に対して、status の更新を行います。  
+        実行者の role（user / supporter）によって更新できるステータスが異なります。  
+        
+        **利用者(user) が更新できるステータス：**  
+        - canceled  
+        - refusal（サポーター変更依頼）
 
+        **サポーター(supporter) が更新できるステータス：**  
+        - confirmed  
+        - completed  
+        - decline（辞退）
+
+        **decline / refusal の場合：**  
+        - order.status を decline/refusal に変更  
+        - request.status を open に戻し  
+        - request.matchedSupporterId を null に戻す
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: requestId
+          required: true
+          schema:
+            type: integer
+            example: 101
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [updateStatus]
+              properties:
+                updateStatus:
+                  type: string
+                  enum:
+                    - confirmed
+                    - completed
+                    - canceled
+                    - decline
+                    - refusal
+                  example: "confirmed"
+      responses:
+        "200":
+          description: ステータス更新成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  updatedRequest:
+                    $ref: "#/components/schemas/Request"
+                  updatedOrder:
+                    $ref: "#/components/schemas/Order"
+        "400":
+          description: 不正なステータス・バリデーションエラー
+        "403":
+          description: 実行権限なし
+        "404":
+          description: 指定された依頼なし
+        "500":
+          description: サーバーエラー
+
+components:
   schemas:
+
+    # =====================================================
+    #  Request（基本形：利用者/サポーター両方共通）
+    # =====================================================
     Request:
       type: object
       properties:
         id:
-          type: string
-          example: "req001"
+          type: integer
+          example: 123
         title:
           type: string
           example: "買い物代行"
         description:
           type: string
-          example: "シャンプーと洗剤を買ってきてほしいです。"
+          example: "牛乳と卵をお願いします"
         status:
           type: string
           enum: [open, matched, confirmed, completed, canceled, expired]
           example: "open"
         scheduledDate:
           type: string
+          format: date
           example: "2025-11-10"
         scheduledStartTime:
           type: string
@@ -348,68 +482,41 @@ components:
         workLocation2:
           type: string
           example: "旭町1丁目"
-        user:
-          type: object
-          properties:
-            id:
-              type: string
-              example: "user001"
-            role:
-              type: string
-              example: "user"
-            gender:
-              type: string
-              example: "女性"
-            address1:
-              type: string
-              example: "旭町1丁目"
-            ageGroup:
-              type: string
-              example: "80代"
-            bio:
-              type: string
-              example: "耳が遠いのでゆっくり話してください。"
+        userId:
+          type: string
+          example: "uid_user_001"
+        matchedSupporterId:
+          type: string
+          nullable: true
 
-    RequestDetail:
+    # =====================================================
+    #  利用者向け詳細 RequestDetailUser
+    # =====================================================
+    RequestDetailUser:
       type: object
       properties:
         id:
           type: integer
-          example: 123
         title:
           type: string
-          example: "買い物代行"
         description:
           type: string
-          example: "スーパーで牛乳と卵を買ってきてください。"
         status:
           type: string
-          example: "open"
         scheduledDate:
           type: string
-          example: "2025-11-10"
         scheduledStartTime:
           type: string
-          example: "10:00"
         scheduledEndTime:
           type: string
-          example: "11:00"
-        user:
-          type: object
-          nullable: true
-          properties:
-            fullName:
-              type: string
-              example: "井上節子"
-            ageGroup:
-              type: string
-              example: "80代"
-            address1:
-              type: string
-              example: "旭町1丁目"
+        workLocation1:
+          type: string
+        workLocation2:
+          type: string
         supporter:
           type: object
           nullable: true
+          description: matchedSupporterId がある場合のみ表示
           properties:
             supporterName:
               type: string
@@ -419,58 +526,160 @@ components:
               example: "090-1234-5678"
             supporterNote:
               type: string
-              example: "近所のボランティアです"
             supporterAvatarUrl:
               type: string
-              example: "https://example.com/avatar.png"
+              nullable: true
 
+    # =====================================================
+    #  SupporterRequest（サポーター用一覧）
+    # =====================================================
+    SupporterRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          example: "open"
+        scheduledDate:
+          type: string
+        scheduledStartTime:
+          type: string
+        scheduledEndTime:
+          type: string
+        user:
+          $ref: "#/components/schemas/UserBrief"
+
+    # =====================================================
+    # UserBrief（サポーター用：open/他人依頼の簡易表示）
+    # =====================================================
+    UserBrief:
+      type: object
+      properties:
+        gender:
+          type: string
+          example: "女性"
+        address1:
+          type: string
+          example: "旭町1丁目"
+        bio:
+          type: string
+        ageGroup:
+          type: string
+          example: "80代"
+
+    # =====================================================
+    # SupporterRequestDetail（サポーター向け詳細）
+    # =====================================================
+    SupporterRequestDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+        scheduledDate:
+          type: string
+        scheduledStartTime:
+          type: string
+        scheduledEndTime:
+          type: string
+        user:
+          oneOf:
+            - $ref: "#/components/schemas/UserBrief"
+            - $ref: "#/components/schemas/UserDetail"
+
+    # =====================================================
+    # UserDetail（サポーター自身が matched した場合の詳細）
+    # =====================================================
+    UserDetail:
+      type: object
+      properties:
+        familyName:
+          type: string
+        firstName:
+          type: string
+        familyNameKana:
+          type: string
+        firstNameKana:
+          type: string
+        gender:
+          type: string
+        phoneNumber:
+          type: string
+        address1:
+          type: string
+        address2:
+          type: string
+        profileImageUrl:
+          type: string
+          nullable: true
+        bio:
+          type: string
+        ageGroup:
+          type: string
+          example: "80代"
+
+    # =====================================================
+    # Order（共通）
+    # =====================================================
     Order:
       type: object
       properties:
         requestId:
           type: integer
-          example: 101
         supporterId:
           type: string
-          example: "supporter001"
         status:
           type: string
           enum: [matched, confirmed, completed, canceled, decline, refusal]
           example: "matched"
 
-    OrderSummary:
+    # =====================================================
+    # SupporterOrderSummary（サポーター用受注一覧）
+    # =====================================================
+    SupporterOrderSummary:
       type: object
       properties:
         id:
           type: integer
-          example: 101
         title:
           type: string
-          example: "買い物代行"
         status:
           type: string
-          example: "confirmed"
         orderStatus:
           type: string
           example: "matched"
         user:
-          type: object
-          properties:
-            id:
-              type: string
-              example: "user001"
-            role:
-              type: string
-              example: "user"
-            gender:
-              type: string
-              example: "女性"
-            address1:
-              type: string
-              example: "旭町1丁目"
-            ageGroup:
-              type: string
-              example: "80代"
-            bio:
-              type: string
-              example: "耳が遠いのでゆっくり話してください。"
+          $ref: "#/components/schemas/UserBrief"
+
+    # =====================================================
+    # SupporterOrderCreated（受注時の返却形式）
+    # =====================================================
+    SupporterOrderCreated:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Order created successfully"
+        order:
+          $ref: "#/components/schemas/Order"
+        updatedRequest:
+          $ref: "#/components/schemas/Request"
+
+    # =====================================================
+    # ErrorResponse
+    # =====================================================
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
