@@ -5,7 +5,7 @@ import { requireAuth, AuthenticatedRequest } from "../../middleware/auth";
 const router = Router();
 
 // POST /api/supporter/orders/:id
-//  ★受注新規登録API★
+//  ★新規引受登録API★
 // requestId は URLパラメータから受け取る。
 // userId は auth.ts（requireAuth）から受け取る。
 // 機能：
@@ -22,19 +22,19 @@ router.post("/:requestId", requireAuth, async (req, res) => {
 
     // サポーター以外は拒否
     if (role !== "supporter") {
-      return res.status(403).json({ error: "サポーターのみ引受可能です" });
+      return res.status(403).json({ error: "サポーターのみ引受可能です。" });
     }
 
     // 対象の request を取得
     const request = await prisma.request.findUnique({ where: { id: Number(requestId) } });
 
     if (!request) {
-      return res.status(404).json({ error: "指定された依頼が見つかりません" });
+      return res.status(404).json({ error: "指定された依頼が見つかりません。" });
     }
 
     // すでにマッチ済み、キャンセルなどの場合は拒否
     if (request.status !== "open") {
-      return res.status(400).json({ error: "この依頼は受付終了です" });
+      return res.status(400).json({ error: "この依頼は受付終了です。" });
     }
 
     // トランザクションで一括処理
@@ -63,6 +63,7 @@ router.post("/:requestId", requireAuth, async (req, res) => {
 // 機能：
 // サポーターIDでordersデータにヒットがあったら
 // そのリクエストIDでrequestsを見に行き、一覧出力する
+// requestStatusに応じて詳細を見せるかどうかはフロント側で制御
 
 router.get("/", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
@@ -70,16 +71,18 @@ router.get("/", requireAuth, async (req: AuthenticatedRequest, res) => {
 
     // サポーター以外のアクセスは拒否
     if (role !== "supporter") {
-      return res.status(403).json({ error: "サポーターのみ閲覧できます" });
+      return res.status(403).json({ error: "サポーターのみ閲覧できます。" });
     }
 
-    // サポーターの受注データ取得（対応する依頼情報と利用者情報を含む）
+    // サポーターの引受データ取得（対応する依頼情報と利用者情報を含む）
     const orders = await prisma.order.findMany({
       where: {
         supporterId: uid
       },
       orderBy: {
-        updatedAt: "desc"
+        request: {
+          scheduledDate: "asc"
+        }
       },
       include: {
         request: {
@@ -87,7 +90,6 @@ router.get("/", requireAuth, async (req: AuthenticatedRequest, res) => {
             user: {
               select: {
                 id: true,
-                role: true,
                 birthday: true,
                 gender: true,
                 address1: true,
@@ -100,7 +102,7 @@ router.get("/", requireAuth, async (req: AuthenticatedRequest, res) => {
     });
 
     if (!orders || orders.length === 0) {
-      return res.json([]);
+      return res.status(200).json([]);
     }
 
     // 年代を算出する関数
@@ -119,7 +121,6 @@ router.get("/", requireAuth, async (req: AuthenticatedRequest, res) => {
         orderStatus: order.status,
         user: {
           id: user.id,
-          role: user.role,
           gender: user.gender,
           address1: user.address1,
           ageGroup: getAgeGroup(user.birthday),
@@ -128,7 +129,7 @@ router.get("/", requireAuth, async (req: AuthenticatedRequest, res) => {
       };
     });
 
-    res.json(formatted);
+    res.status(200).json(formatted);
   } catch (error) {
     console.error("Error fetching supporter orders:", error);
     res.status(500).json({ error: "サーバーエラーが発生しました" });

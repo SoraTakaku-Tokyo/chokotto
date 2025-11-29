@@ -29,6 +29,7 @@ export interface AuthenticatedUser {
   address2: string;
   profileImageUrl: string | null;
   bio: string | null;
+  centerId: string;
 }
 
 // req.userプロパティを持てるRequest型を作成

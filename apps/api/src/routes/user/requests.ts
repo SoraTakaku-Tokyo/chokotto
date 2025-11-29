@@ -42,7 +42,7 @@ router.get("/", requireAuth, async (req: AuthenticatedRequest, res: Response): P
       }
     });
 
-    res.json(requests);
+    res.status(200).json(requests);
   } catch (error) {
     console.error("Error fetching requests:", error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -85,11 +85,10 @@ router.post("/", requireAuth, (async (req: AuthenticatedRequest, res: Response) 
   } catch (error) {
     if (error instanceof ZodError) {
       res.status(400).json({ error: error.errors });
-    } else if (error instanceof Error) {
-      res.status(400).json({ error: error.message });
-    } else {
-      res.status(500).json({ error: "unknown error" });
     }
+
+    console.error(error);
+    res.status(500).json({ error: "unknown error" });
   }
 }) as RequestHandler);
 
@@ -108,13 +107,7 @@ router.get("/:requestId", requireAuth, (async (
     // requestIdが数値かどうかのチェック
     const requestIdNum = Number(requestId);
     if (Number.isNaN(requestIdNum)) {
-      res.status(400).json({ error: "リクエストIDは数値を入力してください" });
-      return;
-    }
-
-    // 利用者以外は拒否
-    if (role !== "user") {
-      res.status(403).json({ error: "利用者のみ依頼可能です。" });
+      res.status(400).json({ error: "リクエストIDは数値を入力してください。" });
       return;
     }
 

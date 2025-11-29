@@ -12,7 +12,7 @@ const router = Router();
 // GET /api/supporter/requests
 // ★依頼リスト取得API★
 // Firebase認証あり。
-// status ≠ "completed", "canceled", "expired"
+// requestSatus = "open"　かつ、orderStatus ≠ "decline(辞退)" "refusal(交代要請)"
 
 router.get("/", requireAuth, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
@@ -74,7 +74,6 @@ router.get("/", requireAuth, async (req: AuthenticatedRequest, res: Response): P
       ...req,
       user: {
         id: req.user.id,
-        role: req.user.role,
         gender: req.user.gender,
         address1: req.user.address1,
         ageGroup: getAgeGroup(req.user.birthday),
@@ -82,7 +81,7 @@ router.get("/", requireAuth, async (req: AuthenticatedRequest, res: Response): P
       }
     }));
 
-    res.json(formatted);
+    res.status(200).json(formatted);
   } catch (error) {
     console.error("Error fetching requests:", error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -104,7 +103,7 @@ router.get("/:requestId", requireAuth, (async (
     // requestIdが数値かどうかのチェック
     const requestIdNum = Number(requestId);
     if (Number.isNaN(requestIdNum)) {
-      res.status(400).json({ error: "リクエストIDは数値を入力してください" });
+      res.status(400).json({ error: "リクエストIDは数値を入力してください。" });
       return;
     }
 
@@ -187,20 +186,16 @@ router.get("/:requestId", requireAuth, (async (
         ageGroup: getAgeGroup(user.birthday)
       };
 
-      // 他のサポーターが受けた依頼なら、open と同じ扱いにする
+      // 他のサポーターが受けた依頼なら403エラー
     } else {
-      formattedUser = {
-        ageGroup: getAgeGroup(user.birthday),
-        gender: user.gender,
-        address1: user.address1,
-        bio: user.bio
-      };
+      res.status(403).json({ error: "この依頼は他のサポーターが対応中のため閲覧できません。" });
+      return;
     }
 
     // 最終整形
     const formatted = { ...request, user: formattedUser };
 
-    res.json(formatted);
+    res.status(200).json(formatted);
   } catch (error) {
     console.error("Error fetching request detail:", error);
     res.status(500).json({ error: "Internal Server Error" });

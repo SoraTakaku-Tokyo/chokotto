@@ -2,8 +2,8 @@ openapi: 3.0.3
 info:
   title: ご近所サポートちょこっと API設計書
   version: 1.0.0
-  description: >
-    高齢者 × サポーター マッチングアプリ「ちょこっと」のAPI仕様書です。  
+  description: |
+    高齢者 × ボランティア マッチングアプリ「ちょこっと」のAPI仕様書です。  
     各エンドポイントの概要・入力・出力・ステータスコードを示します。
 servers:
   - url: http://localhost:3001/api
@@ -16,10 +16,12 @@ tags:
     description: OpenAI による自然文解析
   - name: Normalize Time
     description: 時間表現の正規化
-  - name: Requests
-    description: 依頼情報の取得・登録・詳細表示
   - name: Orders
-    description: 受注・ステータス更新・履歴取得
+    description: 引受・ステータス更新・履歴取得
+  - name: User
+    description: 利用者（高齢者）向けAPI
+  - name: Supporter
+    description: サポーター（ボランティア）向けAPI
 
 paths:
   /auth/qr-login:
@@ -27,7 +29,7 @@ paths:
       tags:
         - Auth
       summary: QRコードログイン
-      description: >
+      description: |
         QRコードで生成された一時トークンを検証し、対応するFirebase UIDのCustom Tokenを発行します。
       requestBody:
         required: true
@@ -62,7 +64,7 @@ paths:
       tags:
         - GPT Proxy
       summary: 自然文から日付・時間・場所などを抽出する
-      description: >
+      description: |
         ユーザーの自然文をOpenAI APIで解析し、「日時」「時間」「場所」「その他」をJSON形式で返します。
       requestBody:
         required: true
@@ -107,7 +109,7 @@ paths:
       tags:
         - Normalize Time
       summary: 時間表現の正規化
-      description: >
+      description: |
         「午前」「午後」「夕方」などの自然文を解析し、時間範囲を正規化します。
       requestBody:
         required: true
@@ -144,9 +146,8 @@ paths:
     get:
       tags:
         - User
-        - Requests
-      summary: 利用者の依頼一覧を取得
-      description: >
+      summary: 利用者自身が依頼した依頼の一覧を取得
+      description: |
         ログイン中の利用者が作成した依頼のうち、  
         status が completed / canceled / expired 以外の依頼を返します。
       security:
@@ -159,18 +160,17 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Request"
+                  $ref: "#/components/schemas/UserRequest"
         "403":
-          description: 利用者(role=user) 以外は禁止
+          description: 利用者のみ依頼可能です。
         "500":
           description: サーバーエラー
 
     post:
       tags:
         - User
-        - Requests
       summary: 新規依頼を登録
-      description: >
+      description: |
         ログイン中の利用者が新しい依頼を登録します。  
         バリデーションは Zod スキーマ `RequestCreateSchema` によって行われます。  
         title は固定で「買い物代行」が設定されます。
@@ -181,40 +181,18 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - description
-                - scheduledDate
-                - scheduledStartTime
-                - scheduledEndTime
-              properties:
-                description:
-                  type: string
-                  example: "スーパーで牛乳と卵を買ってきてください。"
-                scheduledDate:
-                  type: string
-                  format: date
-                  example: "2025-11-10"
-                scheduledStartTime:
-                  type: string
-                  example: "10:00"
-                scheduledEndTime:
-                  type: string
-                  example: "11:00"
-                location1:
-                  type: string
-                  example: "マツモトキヨシ"
+              $ref: "#/components/schemas/NewRequestInput"              
       responses:
         "201":
           description: 新規依頼登録成功
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Request"
+                $ref: "#/components/schemas/NewRequest"
         "400":
           description: Zod バリデーションエラー
         "403":
-          description: 利用者(role=user) 以外は禁止
+          description: 利用者のみ依頼可能です。
         "500":
           description: サーバーエラー
 
@@ -222,10 +200,9 @@ paths:
     get:
       tags:
         - User
-        - Requests
-      summary: 依頼詳細を取得（利用者向け）
-      description: >
-        ログイン中の利用者が自分の依頼の詳細を取得します。  
+      summary: 利用者向けの依頼詳細を取得
+      description: |
+        ログイン中の利用者が自分の依頼した依頼の詳細を取得します。  
         matchedSupporterId がある場合は、サポーター情報も返します。
       security:
         - bearerAuth: []
@@ -244,11 +221,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/RequestDetailUser"
         "400":
-          description: 無効な requestId
+          description: リクエストIDは数値を入力してください。
         "403":
-          description: 自分の依頼以外は禁止
+          description: あなたの依頼ではありません。
         "404":
-          description: 該当依頼が存在しない
+          description: 依頼が見つかりません。
         "500":
           description: サーバーエラー
 
@@ -256,11 +233,10 @@ paths:
     get:
       tags:
         - Supporter
-        - Requests
-      summary: サポーター向け依頼一覧を取得
-      description: >
-        ログイン中のサポーターが確認できる「open」の依頼一覧を返します。  
-        ただし、そのサポーターが decline/refusal した依頼は除外されます。
+      summary: サポーター向け募集中依頼一覧を取得
+      description: |
+        ログイン中のサポーター向けに「open」の依頼一覧を返します。  
+        ただし、そのサポーターが decline(辞退した） / refusal（交代要請された）依頼は除外されます。
       security:
         - bearerAuth: []
       responses:
@@ -273,7 +249,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/SupporterRequest"
         "403":
-          description: サポーター(role=supporter) 以外は禁止
+          description: サポーターのみ閲覧可能です。
         "500":
           description: サーバーエラー
 
@@ -281,13 +257,12 @@ paths:
     get:
       tags:
         - Supporter
-        - Requests
-      summary: 依頼詳細を取得（サポーター向け）
-      description: >
+      summary: サポーター向けの依頼詳細を取得
+      description: |
         依頼の詳細情報を返します。  
-        - status=open の場合：利用者情報は簡易表示  
-        - 自分が matched した依頼：利用者の詳細情報を返す  
-        - 他のサポーターが matched：利用者情報は簡易表示
+        - 募集中(open)の場合：利用者情報は簡易表示  
+        - 自分が引き受けた依頼：利用者の詳細情報を返す  
+        - 他のサポーターが引き受けている場合(異常系)：利用者情報は簡易表示
       security:
         - bearerAuth: []
       parameters:
@@ -303,13 +278,117 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SupporterRequestDetail"
+                oneOf:
+                  - $ref: "#/components/schemas/SupporterRequestDetailOpen"
+                  - $ref: "#/components/schemas/SupporterRequestDetailMatched"
+
+              examples:
+                openCase:
+                  summary: open の場合のuser情報
+                  value:
+                    id:
+                      type: integer
+                    title:
+                      type: string
+                    description:
+                      type: string
+                    status:
+                      type: string
+                      enum: [open, matched, confirmed, completed, canceled, expired]
+                      example: "open"
+                    scheduledDate:
+                      type: string
+                      format: date
+                    scheduledStartTime:
+                      type: string
+                    scheduledEndTime:
+                      type: string
+                    scheduledDurationMinutes:
+                      type: integer
+                      nullable: true
+                    workLocation1:
+                      type: string
+                    workLocation2:
+                      type: string
+                    matchedSupporterId:
+                      type: string
+                      nullable: true
+                    centerId:
+                      type: string
+                    createdAt:
+                      type: string
+                      format: date-time
+                    updatedAt:
+                      type: string
+                      format: date-time
+                    user:
+                      ageGroup: "80代"
+                      gender: "女性"
+                      address1: "旭町1丁目"
+                      bio: "難聴があり聞き取りにくいので、ゆっくり話してください。"
+
+                matchedCase:
+                  summary: matched の場合のuser情報
+                  value:
+                    id:
+                      type: integer
+                    title:
+                      type: string
+                    description:
+                      type: string
+                    status:
+                      type: string
+                      enum: [open, matched, confirmed, completed, canceled, expired]
+                      example: "open"
+                    scheduledDate:
+                      type: string
+                      format: date
+                    scheduledStartTime:
+                      type: string
+                    scheduledEndTime:
+                      type: string
+                    scheduledDurationMinutes:
+                      type: integer
+                      nullable: true
+                    workLocation1:
+                      type: string
+                    workLocation2:
+                      type: string
+                    matchedSupporterId:
+                      type: string
+                      nullable: true
+                    centerId:
+                      type: string
+                    createdAt:
+                      type: string
+                      format: date-time
+                    updatedAt:
+                      type: string
+                      format: date-time
+                    user:
+                      familyName: "井上"
+                      firstName: "節子"
+                      familyNameKana: "イノウエ"
+                      firstNameKana: "セツコ"
+                      gender: "女性"
+                      phoneNumber: "090-1111-1111"
+                      address1: "旭町1丁目"
+                      address2: "42-55"
+                      profileImageUrl: "/sampleuser6.png"
+                      bio: "難聴があり聞き取りにくいので、ゆっくり話してください。"
+                      ageGroup: "80代"
         "400":
-          description: 無効な requestId
+          description: リクエストIDは数値を入力してください。
         "403":
-          description: サポーターのみアクセス可能
+          description: |
+           閲覧権限なし  
+           - サポーターのみ閲覧可能です。 
+           - この依頼は他のサポーターが対応中のため閲覧できません。
         "404":
-          description: 該当依頼が存在しない
+          description: |
+           該当データなし
+           - 依頼が見つかりません。
+           - 利用者情報が見つかりません。
         "500":
           description: サーバーエラー
 
@@ -317,16 +396,15 @@ paths:
     get:
       tags:
         - Supporter
-        - Orders
-      summary: サポーターが受注した依頼一覧を取得
-      description: >
+      summary: サポーターが引き受けた依頼一覧を取得
+      description: |
         ログイン中のサポーター自身が引き受けた依頼一覧を返します。  
-        Request と User（依頼者情報）を含みます。
+        依頼者情報を含みます。
       security:
         - bearerAuth: []
       responses:
         "200":
-          description: 引受一覧取得成功
+          description: 引受一覧取得成功（空の場合は空配列を返します）
           content:
             application/json:
               schema:
@@ -334,7 +412,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/SupporterOrderSummary"
         "403":
-          description: サポーター以外禁止
+          description: サポーターのみ閲覧できます。
         "500":
           description: サーバーエラー
 
@@ -342,12 +420,11 @@ paths:
     post:
       tags:
         - Supporter
-        - Orders
-      summary: 依頼を受注する
-      description: >
+      summary: 依頼を引き受ける
+      description: |
         指定した requestId の依頼を "matched" に更新し、  
-        supporterId を設定した Order を作成します。  
-        依頼の status が open の場合のみ受注可能です。
+        supporterId を設定した Orderデータを作成します。  
+        依頼の status が open の場合のみ引受可能です。
       security:
         - bearerAuth: []
       parameters:
@@ -359,17 +436,17 @@ paths:
             example: 101
       responses:
         "201":
-          description: 受注登録成功
+          description: 引受登録成功
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/SupporterOrderCreated"
         "400":
-          description: 依頼が open ではない
+          description: この依頼は受付終了です。
         "403":
-          description: サポーターのみ許可
+          description: サポーターのみ引受可能です。
         "404":
-          description: 指定された依頼なし
+          description: 指定された依頼が見つかりません。
         "500":
           description: サーバーエラー
 
@@ -377,23 +454,23 @@ paths:
     patch:
       tags:
         - Orders
-      summary: 依頼のステータスを更新する
-      description: >
-        指定された requestId の依頼に対して、status の更新を行います。  
+      summary: 依頼のステータスを更新する  
+      description: |
+        指定された requestId の依頼に対して、status の更新を行います。    
         実行者の role（user / supporter）によって更新できるステータスが異なります。  
         
         **利用者(user) が更新できるステータス：**  
         - canceled  
-        - refusal（サポーター変更依頼）
+        - refusal（サポーター交代要請）
 
         **サポーター(supporter) が更新できるステータス：**  
-        - confirmed  
+        - confirmed（電話連絡済み）  
         - completed  
         - decline（辞退）
 
         **decline / refusal の場合：**  
         - order.status を decline/refusal に変更  
-        - request.status を open に戻し  
+        - request.status を open に戻す  
         - request.matchedSupporterId を null に戻す
       security:
         - bearerAuth: []
@@ -431,16 +508,36 @@ paths:
                 properties:
                   message:
                     type: string
-                  updatedRequest:
-                    $ref: "#/components/schemas/Request"
-                  updatedOrder:
-                    $ref: "#/components/schemas/Order"
+                  OrderRequestUpdated:
+                    $ref: "#/components/schemas/OrderRequestUpdated"
+
+              examples:
+                createdOrder:
+                  summary: Ordersの更新
+                  value:
+                    status: "canceled"
+                updatedRequest:
+                  summary: Requestの更新
+                  value:
+                    status: "canceled"
+
         "400":
-          description: 不正なステータス・バリデーションエラー
+          description: |
+            バリデーションエラー  
+            - リクエストIDは数値を指定してください。  
+            - 不正なステータスです。
         "403":
-          description: 実行権限なし
+          description: |
+            実行権限なし  
+            - 依頼者本人のみ操作可能です。  
+            - 担当サポーターのみ操作可能です。
         "404":
-          description: 指定された依頼なし
+          description: 指定された依頼が見つかりません。
+        "409":
+          description: |
+            不整合  
+            - 引受されていないため、この操作はできません。  
+            - 対応する引受データが見つかりません。  
         "500":
           description: サーバーエラー
 
@@ -454,9 +551,9 @@ components:
   schemas:
 
     # =====================================================
-    #  Request（基本形：利用者/サポーター両方共通）
+    #  ユーザー向け依頼一覧 UserRequest
     # =====================================================
-    Request:
+    UserRequest:
       type: object
       properties:
         id:
@@ -467,11 +564,80 @@ components:
           example: "買い物代行"
         description:
           type: string
-          example: "牛乳と卵をお願いします"
+          example: "鼻炎の薬をお願いします"
         status:
           type: string
           enum: [open, matched, confirmed, completed, canceled, expired]
           example: "open"
+        scheduledDate:
+          type: string
+          format: date
+          example: "2025-11-10"
+        scheduledStartTime:
+          type: string
+          example: "10:00"
+        scheduledEndTime:
+          type: string
+          example: "11:00"
+        scheduledDurationMinutes:
+          type: integer
+          nullable: true
+        workLocation1:
+          type: string
+          example: "マツモトキヨシ"
+        workLocation2:
+          type: string
+          example: "旭町1丁目"
+        matchedSupporterId:
+          type: string
+          nullable: true
+        centerId:
+          type: string
+          example: "C001"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-11-01T10:15:30Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2025-11-01T10:15:30Z"
+        
+    # =====================================================
+    #  新規依頼(入力) NewRequestInpit
+    # =====================================================
+    NewRequestInput:
+      type: object
+      properties:
+        description:
+          type: string
+          example: "鼻炎の薬をお願いします"
+        scheduledDate:
+          type: string
+          format: date
+          example: "2025-11-10"
+        scheduledStartTime:
+          type: string
+          example: "10:00"
+        scheduledEndTime:
+          type: string
+          example: "11:00"
+        workLocation1:
+          type: string
+          example: "マツモトキヨシ"
+    
+    # =====================================================
+    #  新規依頼(出力) NewRequest
+    # =====================================================
+    NewRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          example: "買い物代行"
+        description:
+          type: string
+          example: "鼻炎の薬をお願いします"
         scheduledDate:
           type: string
           format: date
@@ -488,12 +654,9 @@ components:
         workLocation2:
           type: string
           example: "旭町1丁目"
-        userId:
+        cenerId:
           type: string
-          example: "uid_user_001"
-        matchedSupporterId:
-          type: string
-          nullable: true
+          example: "C001"
 
     # =====================================================
     #  利用者向け詳細 RequestDetailUser
@@ -503,22 +666,50 @@ components:
       properties:
         id:
           type: integer
+          example: 123
         title:
           type: string
+          example: "買い物代行"
         description:
           type: string
+          example: "鼻炎の薬をお願いします"
         status:
           type: string
+          enum: [open, matched, confirmed, completed, canceled, expired]
+          example: "matched"
         scheduledDate:
           type: string
+          format: date
+          example: "2025-11-10"
         scheduledStartTime:
           type: string
+          example: "10:00"
         scheduledEndTime:
           type: string
+          example: "11:00"
+        scheduledDurationMinutes:
+          type: integer
+          nullable: true
         workLocation1:
           type: string
+          example: "マツモトキヨシ"
         workLocation2:
           type: string
+          example: "旭町1丁目"
+        matchedSupporterId:
+          type: string
+          example: "BuUmfPzwDpfZi4mtPACvdQrMiE73"
+        centerId:
+          type: string
+          example: "C001"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-11-01T10:15:30Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2025-11-01T10:15:30Z"
         supporter:
           type: object
           nullable: true
@@ -526,18 +717,19 @@ components:
           properties:
             supporterName:
               type: string
-              example: "サポーター太郎"
+              example: "木下亜里沙"
             supporterPhone:
               type: string
-              example: "090-1234-5678"
+              example: "080-3333-3333"
             supporterNote:
               type: string
+              example: "お役に立てると嬉しいです！"
             supporterAvatarUrl:
               type: string
-              nullable: true
+              example: "/sampleuser3.png"
 
     # =====================================================
-    #  SupporterRequest（サポーター用一覧）
+    #  サポーター向け募集中依頼一覧 SupporterRequest
     # =====================================================
     SupporterRequest:
       type: object
@@ -550,38 +742,52 @@ components:
           type: string
         status:
           type: string
+          enum: [open, matched, confirmed, completed, canceled, expired]
           example: "open"
         scheduledDate:
           type: string
+          format: date
         scheduledStartTime:
           type: string
         scheduledEndTime:
           type: string
+        scheduledDurationMinutes:
+          type: integer
+          nullable: true
+        workLocation1:
+          type: string
+        workLocation2:
+          type: string
+        matchedSupporterId:
+          type: string
+          nullable: true
+        centerId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
         user:
-          $ref: "#/components/schemas/UserBrief"
+          type: object
+          properties:
+            id:
+              type: string
+            gender:
+              type: string
+            address1:
+              type: string
+            ageGroup:
+              type: string
+              example: "80代"
+            bio:
+              type: string
 
     # =====================================================
-    # UserBrief（サポーター用：open/他人依頼の簡易表示）
+    # サポーター向け詳細(引受前) SupporterRequestDetailOpen
     # =====================================================
-    UserBrief:
-      type: object
-      properties:
-        gender:
-          type: string
-          example: "女性"
-        address1:
-          type: string
-          example: "旭町1丁目"
-        bio:
-          type: string
-        ageGroup:
-          type: string
-          example: "80代"
-
-    # =====================================================
-    # SupporterRequestDetail（サポーター向け詳細）
-    # =====================================================
-    SupporterRequestDetail:
+    SupporterRequestDetailOpen:
       type: object
       properties:
         id:
@@ -592,65 +798,116 @@ components:
           type: string
         status:
           type: string
+          enum: [open, matched, confirmed, completed, canceled, expired]
+          example: "open"
         scheduledDate:
           type: string
+          format: date
         scheduledStartTime:
           type: string
         scheduledEndTime:
           type: string
-        user:
-          oneOf:
-            - $ref: "#/components/schemas/UserBrief"
-            - $ref: "#/components/schemas/UserDetail"
-
-    # =====================================================
-    # UserDetail（サポーター自身が matched した場合の詳細）
-    # =====================================================
-    UserDetail:
-      type: object
-      properties:
-        familyName:
+        scheduledDurationMinutes:
+          type: integer
+          nullable: true
+        workLocation1:
           type: string
-        firstName:
+        workLocation2:
           type: string
-        familyNameKana:
-          type: string
-        firstNameKana:
-          type: string
-        gender:
-          type: string
-        phoneNumber:
-          type: string
-        address1:
-          type: string
-        address2:
-          type: string
-        profileImageUrl:
+        matchedSupporterId:
           type: string
           nullable: true
-        bio:
+        centerId:
           type: string
-        ageGroup:
+        createdAt:
           type: string
-          example: "80代"
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        user:
+          type: object
+          properties:
+            ageGroup:
+              type: string
+              example: "80代"
+            gender:
+              type: string
+            address1:
+              type: string
+            bio:
+              type: string
 
     # =====================================================
-    # Order（共通）
+    # サポーター向け詳細(引受済) SupporterRequestDetailMatched
     # =====================================================
-    Order:
+    SupporterRequestDetailMatched:
       type: object
       properties:
-        requestId:
+        id:
           type: integer
-        supporterId:
+        title:
+          type: string
+        description:
           type: string
         status:
           type: string
-          enum: [matched, confirmed, completed, canceled, decline, refusal]
+          enum: [open, matched, confirmed, completed, canceled, expired]
           example: "matched"
+        scheduledDate:
+          type: string
+          format: date
+        scheduledStartTime:
+          type: string
+        scheduledEndTime:
+          type: string
+        scheduledDurationMinutes:
+          type: integer
+          nullable: true
+        workLocation1:
+          type: string
+        workLocation2:
+          type: string
+        matchedSupporterId:
+          type: string
+          nullable: true
+        centerId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        user:
+          type: object
+          properties:
+            familyName:
+              type: string
+            firstName:
+              type: string
+            familyNameKana:
+              type: string
+            firstNameKana:
+              type: string
+            gender:
+              type: string
+            phoneNumber:
+              type: string
+            address1:
+              type: string
+            address2:
+              type: string
+            profileImageUrl:
+              type: string
+            bio:
+              type: string
+            ageGroup:
+              type: string
+              example: "80代"
 
     # =====================================================
-    # SupporterOrderSummary（サポーター用受注一覧）
+    # サポーター向け引受一覧 SupporterOrderSummary
     # =====================================================
     SupporterOrderSummary:
       type: object
@@ -659,16 +916,54 @@ components:
           type: integer
         title:
           type: string
+        description:
+          type: string
         status:
           type: string
-        orderStatus:
-          type: string
+          enum: [open, matched, confirmed, completed, canceled, expired]
           example: "matched"
+        scheduledDate:
+          type: string
+          format: date
+        scheduledStartTime:
+          type: string
+        scheduledEndTime:
+          type: string
+        scheduledDurationMinutes:
+          type: integer
+          nullable: true
+        workLocation1:
+          type: string
+        workLocation2:
+          type: string
+        matchedSupporterId:
+          type: string
+          nullable: true
+        centerId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
         user:
-          $ref: "#/components/schemas/UserBrief"
+          type: object
+          properties:
+            id:
+              type: string
+            gender:
+              type: string
+            address1:
+              type: string
+            ageGroup:
+              type: string
+              example: "80代"
+            bio:
+              type: string
 
     # =====================================================
-    # SupporterOrderCreated（受注時の返却形式）
+    # 引受時の返却形式 SupporterOrderCreated
     # =====================================================
     SupporterOrderCreated:
       type: object
@@ -676,10 +971,60 @@ components:
         message:
           type: string
           example: "Order created successfully"
-        order:
-          $ref: "#/components/schemas/Order"
+
         updatedRequest:
-          $ref: "#/components/schemas/Request"
+          type: object
+          properties:
+            matchedSupporterId:
+              type: string
+            status:
+              type: string
+              enum: [open, matched, confirmed, completed, canceled]
+              example: "matched"
+
+        createdOrder:
+          type: object
+          properties:
+            requestId:
+              type: integer
+            supporterId:
+              type: string
+            status:
+              type: string
+              enum: [matched, confirmed, completed, canceled, decline, refusal]
+              example: "matched"
+    
+    # =====================================================
+    # ステータス更新時の返却形式 OrderRequestUpdated
+    # =====================================================
+    OrderRequestUpdated:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Status updated successfully"
+
+        updatedOrder:
+          type: object
+          properties:
+            requestId:
+              type: integer
+            supporterId:
+              type: string
+            status:
+              type: string
+              enum: [matched, confirmed, completed, canceled, decline, refusal]
+              example: "canceled"
+
+        updatedRequest:
+          type: object
+          properties:
+            matchedSupporterId:
+              type: string
+            status:
+              type: string
+              enum: [open, matched, confirmed, completed, canceled]
+              example: "canceled"
 
     # =====================================================
     # ErrorResponse

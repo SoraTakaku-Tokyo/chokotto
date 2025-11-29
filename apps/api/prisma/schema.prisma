@@ -107,8 +107,7 @@ model Request {
   title                     String
   description               String?
   status                    RequestStatus @default(open)
-  requestedAt               DateTime  @default(now()) @db.Timestamptz(6) @map("requested_at")
-
+  
   // 日付は Postgres の DATE を使用
   scheduledDate             DateTime  @db.Date @map("scheduled_date")
   // "HH:mm" の string で運用
@@ -138,7 +137,7 @@ model Request {
 }
 
 // ----------------------------------------
-// ordersテーブル（受注）
+// ordersテーブル（引受）
 // ----------------------------------------
 model Order {
   id            Int       @id @default(autoincrement())
