@@ -167,12 +167,12 @@ completed（完了）
 
 ### 依頼者画面
 
-![ログイン後トップ画面](.README-images/user-top/png)  
-![依頼作成画面](.README-images/request-create/png)  
-![依頼音声入力画面](.README-images/request-create-chat/png)
+![ログイン後トップ画面](./README-images/user-top.png)  
+![依頼作成画面](./README-images/request-create.png)  
+![依頼音声入力画面](./README-images/request-create-chat.png)
 
 ### サポーター画面
 
-![ログイン後トップ画面](.README-images/supporter-top/png)  
-![依頼一覧](.README-images/request-list/png)  
-![依頼詳細](.README-images/request-detail/png)
+![ログイン後トップ画面](./README-images/supporter-top.png)  
+![依頼一覧](./README-images/request-list.png)  
+![依頼詳細](./README-images/request-detail.png)
