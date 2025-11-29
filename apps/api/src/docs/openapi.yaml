@@ -181,7 +181,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/NewRequestInput"              
+              $ref: "#/components/schemas/NewRequestInput"
       responses:
         "201":
           description: 新規依頼登録成功
@@ -381,14 +381,14 @@ paths:
           description: リクエストIDは数値を入力してください。
         "403":
           description: |
-           閲覧権限なし  
-           - サポーターのみ閲覧可能です。 
-           - この依頼は他のサポーターが対応中のため閲覧できません。
+            閲覧権限なし  
+            - サポーターのみ閲覧可能です。 
+            - この依頼は他のサポーターが対応中のため閲覧できません。
         "404":
           description: |
-           該当データなし
-           - 依頼が見つかりません。
-           - 利用者情報が見つかりません。
+            該当データなし
+            - 依頼が見つかりません。
+            - 利用者情報が見つかりません。
         "500":
           description: サーバーエラー
 
@@ -454,11 +454,11 @@ paths:
     patch:
       tags:
         - Orders
-      summary: 依頼のステータスを更新する  
+      summary: 依頼のステータスを更新する
       description: |
         指定された requestId の依頼に対して、status の更新を行います。    
         実行者の role（user / supporter）によって更新できるステータスが異なります。  
-        
+
         **利用者(user) が更新できるステータス：**  
         - canceled  
         - refusal（サポーター交代要請）
@@ -537,7 +537,7 @@ paths:
           description: |
             不整合  
             - 引受されていないため、この操作はできません。  
-            - 対応する引受データが見つかりません。  
+            - 対応する引受データが見つかりません。
         "500":
           description: サーバーエラー
 
@@ -547,9 +547,8 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-  
-  schemas:
 
+  schemas:
     # =====================================================
     #  ユーザー向け依頼一覧 UserRequest
     # =====================================================
@@ -602,7 +601,7 @@ components:
           type: string
           format: date-time
           example: "2025-11-01T10:15:30Z"
-        
+
     # =====================================================
     #  新規依頼(入力) NewRequestInpit
     # =====================================================
@@ -625,7 +624,7 @@ components:
         workLocation1:
           type: string
           example: "マツモトキヨシ"
-    
+
     # =====================================================
     #  新規依頼(出力) NewRequest
     # =====================================================
@@ -993,7 +992,7 @@ components:
               type: string
               enum: [matched, confirmed, completed, canceled, decline, refusal]
               example: "matched"
-    
+
     # =====================================================
     # ステータス更新時の返却形式 OrderRequestUpdated
     # =====================================================

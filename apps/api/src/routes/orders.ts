@@ -86,10 +86,10 @@ router.patch("/:requestId", requireAuth, async (req: AuthenticatedRequest, res) 
       });
 
       if (!order) {
-        console.warn(
-          `【警告】matchedSupporterId があるのに Order が存在しません`,
-        { requestId, supporterId }
-        );
+        console.warn(`【警告】matchedSupporterId があるのに Order が存在しません`, {
+          requestId,
+          supporterId
+        });
         // Orderが存在しない場合も request のみ更新
         const updatedRequest = await prisma.request.update({
           where: { id: Number(requestId) },
@@ -124,9 +124,9 @@ router.patch("/:requestId", requireAuth, async (req: AuthenticatedRequest, res) 
         updatedOrder
       });
 
-    // ==========================================
-    // 2. confirmed、completed ⇒ requestsデータとordersデータのステータス更新
-    // ==========================================
+      // ==========================================
+      // 2. confirmed、completed ⇒ requestsデータとordersデータのステータス更新
+      // ==========================================
     } else if (["confirmed", "completed"].includes(updateStatus)) {
       // 先に、サポーターIDを取得する
       const supporterId = request.matchedSupporterId;
@@ -174,9 +174,9 @@ router.patch("/:requestId", requireAuth, async (req: AuthenticatedRequest, res) 
         updatedOrder
       });
 
-    // ==========================================
-    // 3. decline、refusal ⇒ ordersデータのステータス更新、requestsデータのmatchedsupporterIdを削除しopenに更新
-    // ==========================================
+      // ==========================================
+      // 3. decline、refusal ⇒ ordersデータのステータス更新、requestsデータのmatchedsupporterIdを削除しopenに更新
+      // ==========================================
     } else if (["decline", "refusal"].includes(updateStatus)) {
       // 先に、サポーターIDを取得する
       const supporterId = request.matchedSupporterId;

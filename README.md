@@ -1,10 +1,12 @@
 # ご近所サポート　ちょこっと
+
 高齢者×ボランティアのマッチング支援アプリ(卒業制作)
 
 ## アプリ概要
+
 高齢者が日常生活でのちょっとした困りごとを気軽に依頼できる “地域支援マッチングアプリ” です。
 
-- 依頼者（高齢者）がスマホから簡単に依頼を作成  
+- 依頼者（高齢者）がスマホから簡単に依頼を作成
 - サポーター（ボランティア）は依頼一覧を確認し、引き受け可能
 - 引き受け後は “マッチング成立” として依頼が進行
 - 運営センター（社会福祉協議会などを想定）は依頼者の新規登録や全体状況の管理が可能
@@ -16,7 +18,7 @@
 １）フロントエンド担当（Next.js / UI）  
 ２）音声入力担当（Web Speech API / OpenAI API）  
 ３）認証・QRログイン担当（Firebase Authentication）  
-４）私：バックエンド担当（API / DB）  
+４）私：バックエンド担当（API / DB）
 
 ## 私の担当範囲
 
@@ -33,10 +35,11 @@
 - Swagger（OpenAPI）定義とAPIドキュメント整理
 
 ## システムアーキテクチャ
+
 Next.js（フロントエンド）  
-      ↓ （Firebase Auth）  
+ ↓ （Firebase Auth）  
 Express（TypeScript API）  
-      ↓ （Prisma ORM）  
+ ↓ （Prisma ORM）  
 PostgreSQL（データベース）
 
 フロントはFirebase SDKでログイン  
@@ -45,18 +48,21 @@ PrismaによりDBモデルとAPIの実装を統合
 Docker Composeによって Web / API / DB を一括管理
 
 ## DB スキーマ（主要テーブル）
-| テーブル |	役割 |
-|---------|-------|
-| User | 依頼者 / サポーター。Firebase UIDを保持する設計（現時点ではテスト用UIDをseedして利用）|
-| Request | 依頼内容（依頼種別・日時・場所・メモなど）|
-| Order | サポーターが依頼を引き受けた際に生成されるレコード |
-| Center | 運営センター向けの拡張用テーブル（現時点では未実装） |
-| AuthTicket | QRログイン用の一時チケット（認証担当が作成）|
+
+| テーブル   | 役割                                                                                   |
+| ---------- | -------------------------------------------------------------------------------------- |
+| User       | 依頼者 / サポーター。Firebase UIDを保持する設計（現時点ではテスト用UIDをseedして利用） |
+| Request    | 依頼内容（依頼種別・日時・場所・メモなど）                                             |
+| Order      | サポーターが依頼を引き受けた際に生成されるレコード                                     |
+| Center     | 運営センター向けの拡張用テーブル（現時点では未実装）                                   |
+| AuthTicket | QRログイン用の一時チケット（認証担当が作成）                                           |
 
 ## DB スキーマ（ER 図）
+
 ![ER図](./database_design.png)
 
 ## 認証・認可
+
 ### 認証（Authentication）
 
 フロント側でFirebase Authenticationによりログイン  
@@ -74,7 +80,9 @@ APIではroleに基づいてアクセス制御を行います。
 ロールによる分岐が増えたため、利用者用APIとサポーター用APIを分割するリファクタリングを実施しました。
 
 ## 技術スタック
+
 ### バックエンド
+
 - Express.js（TypeScript）
 - Prisma / PostgreSQL
 - Firebase Admin SDK（認証連携）
@@ -83,30 +91,39 @@ APIではroleに基づいてアクセス制御を行います。
 - Docker Compose
 
 ### フロントエンド
+
 - Next.js（App Router）
 - React / React Query
 - Tailwind CSS
 
 ### その他
+
 - OpenAI API（音声担当が利用）
 
 ## ローカル開発（起動方法）
+
 ### 依存関係のインストール
+
 pnpm install -r
 
 ### 環境変数ファイルの準備
+
 cp .env.example .env.dev  
 cp apps/web/.env.example apps/web/.env.local
+
 ### Firebase API キー等を記入
 
 ### Docker 起動
+
 docker compose up --build
 
 ### DB マイグレーション & 初期データ
+
 docker compose exec api pnpm prisma migrate deploy  
 docker compose exec api pnpm prisma db seed
 
 ## API ドキュメント（Swagger UI）
+
 このプロジェクトのAPI仕様書はOpenAPI形式（YAML）で定義されています。
 
 OpenAPIファイル
@@ -117,14 +134,15 @@ apps/api/src/docs/openapi.yaml
 https://editor.swagger.io/?url=https://raw.githubusercontent.com/SoraTakaku-Tokyo/chokotto/main/apps/api/src/docs/openapi.yaml
 
 ## 依頼のステータス遷移
+
 依頼は以下の流れで進行します。
 
 open（未引受）  
-   ↓ サポーターが引受  
+ ↓ サポーターが引受  
 matched（引受済）  
-   ↓ 電話確認  
+ ↓ 電話確認  
 confirmed（対応中）  
-   ↓ 作業完了  
+ ↓ 作業完了  
 completed（完了）
 
 ■ 例外的な遷移（キャンセル・辞退・交代・期限切れ）
@@ -148,11 +166,13 @@ completed（完了）
 ## 画面イメージ
 
 ### 依頼者画面
+
 ![ログイン後トップ画面](.README-images/user-top/png)  
 ![依頼作成画面](.README-images/request-create/png)  
 ![依頼音声入力画面](.README-images/request-create-chat/png)
+
 ### サポーター画面
+
 ![ログイン後トップ画面](.README-images/supporter-top/png)  
 ![依頼一覧](.README-images/request-list/png)  
 ![依頼詳細](.README-images/request-detail/png)
-
