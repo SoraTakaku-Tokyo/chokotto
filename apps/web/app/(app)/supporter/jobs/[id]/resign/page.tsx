@@ -16,7 +16,7 @@ export default function ResignConfirmPage({ params }: { params: { id: string } }
   async function handleConfirmResign() {
     try {
       setSubmitting(true);
-      // ★API接続：受注ステータスを "decline" に更新
+      // ★API接続：引受ステータスを "decline" に更新
       await updateOrderStatus(Number(jobId), "decline");
 
       // ✅ 成功通知を表示してから遷移

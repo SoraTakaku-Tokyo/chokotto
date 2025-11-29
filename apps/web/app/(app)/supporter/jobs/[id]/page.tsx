@@ -138,7 +138,7 @@ export default function JobPage({ params }: { params: { id: string } }) {
     try {
       setSubmitting(true);
 
-      // API接続：受注新規登録
+      // API接続：新規引受登録
       await createOrder(Number(job!.id));
 
       router.replace(`/supporter/jobs/${job!.id}?view=accepted&flash=accepted`);
@@ -155,7 +155,7 @@ export default function JobPage({ params }: { params: { id: string } }) {
     try {
       setSubmitting(true);
 
-      // API接続：受注ステータスを "confirmed" に更新
+      // API接続：引受ステータスを "confirmed" に更新
       await updateOrderStatus(Number(job!.id), "confirmed");
 
       setNotice("電話報告を確認しました\n「ホームに戻る」ボタンでお戻りください");
@@ -175,7 +175,7 @@ export default function JobPage({ params }: { params: { id: string } }) {
     try {
       setSubmitting(true);
 
-      // ★API接続：受注ステータスを "completed" に更新
+      // ★API接続：引受ステータスを "completed" に更新
       await updateOrderStatus(Number(job!.id), "completed");
 
       setNotice("完了報告を送信しました");
