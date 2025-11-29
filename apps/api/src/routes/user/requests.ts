@@ -102,7 +102,7 @@ router.get("/:requestId", requireAuth, (async (
 ): Promise<void> => {
   try {
     const { requestId } = req.params;
-    const { uid, role } = req.user!;
+    const { uid } = req.user!;
 
     // requestIdが数値かどうかのチェック
     const requestIdNum = Number(requestId);
