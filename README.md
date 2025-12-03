@@ -9,7 +9,7 @@
 - 利用者（高齢者）がスマホから簡単に依頼を作成
 - サポーター（ボランティア）は依頼一覧を確認し、引き受け可能
 - 引き受け後は “マッチング成立” として依頼が進行
-- 運営センター（社会福祉協議会などを想定）は利用者の新規登録や全体状況の管理が可能（現時点は非実装）  
+- 運営センター（社会福祉協議会などを想定）は利用者の新規登録や全体状況の管理が可能（現時点は非実装）
 - 音声入力、大きめのボタン、シンプルなUI など、高齢者に優しいデザイン
 - 利用者はQRコードログイン（途中まで対応）。現状は利用者もメール＋パスワードでログイン
 
@@ -108,13 +108,19 @@ pnpm install -r
 ### 環境変数ファイルの準備
 
 # API 用
+
 cp apps/api/.env.example apps/api/.env
+
 # Docker Compose 用
+
 cp .env.example .env.dev
+
 # Web 用
+
 cp apps/web/.env.example apps/web/.env.local
 
 ### Firebase API キー等を記入
+
 apps/api/.env と apps/web/.env.local に Firebase 関連の値を記入します。
 
 ### Docker 起動

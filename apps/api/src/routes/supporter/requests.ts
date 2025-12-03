@@ -6,6 +6,7 @@ import { Router, Response, RequestHandler } from "express";
 import { Prisma } from "@prisma/client";
 import { prisma } from "../../lib/prisma";
 import { requireAuth, AuthenticatedRequest } from "../../middleware/auth";
+import { getAgeGroup } from "../../utils/getAgeGroup";
 
 const router = Router();
 
@@ -61,13 +62,6 @@ router.get("/", requireAuth, async (req: AuthenticatedRequest, res: Response): P
         }
       }
     });
-
-    // 生年月日から「年代」を計算する関数
-    const getAgeGroup = (birthday: Date): string => {
-      const age = new Date().getFullYear() - birthday.getFullYear();
-      const decade = Math.floor(age / 10) * 10;
-      return `${decade}代`;
-    };
 
     // フロントへ送る利用者情報
     const formatted = requests.map((req) => ({
@@ -149,14 +143,6 @@ router.get("/:requestId", requireAuth, (async (
       res.status(404).json({ error: "利用者情報が見つかりません。" });
       return;
     }
-
-    // 年代を計算する関数
-    const getAgeGroup = (birthday?: Date): string | null => {
-      if (!birthday) return null;
-      const age = new Date().getFullYear() - birthday.getFullYear();
-      const decade = Math.floor(age / 10) * 10;
-      return `${decade}代`;
-    };
 
     // フロント用に整形
     let formattedUser: Record<string, unknown> | null = null;

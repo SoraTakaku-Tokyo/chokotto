@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { prisma } from "../../lib/prisma";
 import { requireAuth, AuthenticatedRequest } from "../../middleware/auth";
+import { getAgeGroup } from "../../utils/getAgeGroup";
 
 const router = Router();
 
@@ -104,13 +105,6 @@ router.get("/", requireAuth, async (req: AuthenticatedRequest, res) => {
     if (!orders || orders.length === 0) {
       return res.status(200).json([]);
     }
-
-    // 年代を算出する関数
-    const getAgeGroup = (birthday: Date): string => {
-      const age = new Date().getFullYear() - birthday.getFullYear();
-      const decade = Math.floor(age / 10) * 10;
-      return `${decade}代`;
-    };
 
     // フロントで扱う形式に整形
     const formatted = orders.map((order) => {
