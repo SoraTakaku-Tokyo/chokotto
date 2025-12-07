@@ -54,13 +54,19 @@ export default function U8ConfirmRequestPage() {
     setLoading(true);
 
     try {
-      await createRequest({
+      const validationErrors = await createRequest({
         description: (draft.note ?? "").trim() || undefined,
         scheduledDate: draft.date!, // 例: "2025-10-24"
         scheduledStartTime: draft.start!, // 例: "09:00"
         scheduledEndTime: draft.end!, // 例: "12:00"
         location1: draft.place! // 例: "イオン◯◯店"
       });
+
+      // Zodエラーの場合はメッセージが返ってくる
+      if (validationErrors) {
+        setWarn(validationErrors.join(" "));
+        return;
+      }
 
       // 成功：ドラフト破棄 → 完了ページへ（完了ページで1.2秒後に /user?flash=requested へ）
       sessionStorage.removeItem(DRAFT_KEY);

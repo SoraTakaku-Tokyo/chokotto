@@ -97,16 +97,17 @@ export async function createRequest(formData: {
   scheduledStartTime: string;
   scheduledEndTime: string;
   location1?: string;
-}): Promise<void> {
+}): Promise<string[] | null> {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
     if (!baseUrl) {
-      throw new Error("環境変数 NEXT_PUBLIC_API_BASE_URL が設定されていません。");
+      console.error("環境変数 NEXT_PUBLIC_API_BASE_URL が設定されていません。");
+      return ["システムエラー。時間をおいてお試しください。"];
     }
 
     const token = await getAuthToken();
-    if (!token) throw new Error("ユーザーがログインしていません。");
+    if (!token) return ["ログアウトしています。もう一度ログインしてください。"];
 
     const response = await fetch(withBase(baseUrl, "/api/user/requests"), {
       method: "POST",
@@ -117,11 +118,20 @@ export async function createRequest(formData: {
       body: JSON.stringify(formData)
     });
 
-    if (!response.ok) throw new Error(`依頼登録失敗: ${response.status} ${response.statusText}`);
+    // Zodバリデーションでエラーになった場合
+    if (!response.ok) {
+      const zodError = await response.json();
+
+      if (zodError.errorType === "validation") {
+        return zodError.messages.map((m: any) => m.message);
+      }
+      return ["サーバーエラーが発生しました"];
+    }
     console.log("依頼登録成功");
+    return null;
   } catch (error) {
     console.error("依頼登録に失敗しました:", error);
-    throw error;
+    return ["通信エラーが発生しました。時間をおいて再実行してください。"];
   }
 }
 

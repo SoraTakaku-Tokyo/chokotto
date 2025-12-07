@@ -65,17 +65,31 @@ router.post("/", requireAuth, (async (req: AuthenticatedRequest, res: Response) 
     }
 
     // Zodでバリデーション実行
-    const parsed = RequestCreateSchema.parse(req.body);
+    const parsed = RequestCreateSchema.safeParse(req.body);
+
+    // Zodエラーならメッセージを返して終了
+    if (!parsed.success) {
+      return res.status(400).json({
+        errorType: "validation",
+        messages: parsed.error.issues.map((issue) => ({
+          field: issue.path.join("."),
+          message: issue.message
+        }))
+      });
+    }
+
+    // バリデーション済みの入力値data
+    const validatedData = parsed.data;
 
     const newRequest = await prisma.request.create({
       data: {
         userId: uid,
         title: "買い物代行",
-        description: parsed.description,
-        scheduledDate: new Date(parsed.scheduledDate),
-        scheduledStartTime: parsed.scheduledStartTime,
-        scheduledEndTime: parsed.scheduledEndTime,
-        workLocation1: parsed.location1,
+        description: validatedData.description,
+        scheduledDate: new Date(validatedData.scheduledDate),
+        scheduledStartTime: validatedData.scheduledStartTime,
+        scheduledEndTime: validatedData.scheduledEndTime,
+        workLocation1: validatedData.location1,
         workLocation2: address1,
         centerId: centerId
       }
