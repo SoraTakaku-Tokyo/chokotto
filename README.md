@@ -28,9 +28,9 @@
 - Prisma / PostgreSQL を用いた DB スキーマ設計
 - ロールによって異なる 利用者用 / サポーター用APIの分割実装
 - Firebase Authenticationで認証されたユーザー情報をAPI側で扱うための連携
-  - Firebase ID Token の検証（verifyIdToken）
+  - Firebase ID Token の検証
   - UIDとDBのUserレコードの紐づけ
-  - ロールに基づくアクセス制御（RBAC）
+  - ロールに基づくアクセス制御
 - 依頼の作成 / 取得 / 更新API
 - Swagger（OpenAPI）定義とAPIドキュメント整理
 
